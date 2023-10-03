@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
-#include <process.h>
+//#include <process.h>
+#include <unistd.h>
 
 #include "dd.h"
 
