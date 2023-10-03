@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <mem.h>
+#include <memory.h>
 #include <malloc.h>
-#include <direct.h>
+//#include <direct.h>
 
 #include "config.h"
 
@@ -34,7 +34,7 @@
 
 #include "command.h"
 
-#include "m6502\m6502.h"
+#include "m6502.h"
 
 #include "prof.h"
 
