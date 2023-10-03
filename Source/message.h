@@ -26,8 +26,8 @@ int updated;
 
 msgbuffer() {num=0; updated=0;}
 virtual void add(char *m,int color=0);
-void __cdecl printf(int color,char *format, ...);
-void __cdecl error(char *format,...);
+//void __cdecl printf(int color,char *format, ...);
+//void __cdecl error(char *format,...);
 void draw(int x,int y,int first,int numtodraw);
 };
 

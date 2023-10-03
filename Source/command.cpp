@@ -4,6 +4,7 @@
 #include <strings.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <cstring>
 
 #include "dd.h"
 
@@ -28,11 +29,12 @@ int option_res(char *p)
 int option_help(char *p);
 int option_sb(char *p);
 int option_sb16(char *p);
+int i;
 
 static char *inputtypes[]={"NONE","GRAVIS","KEY1","KEY2","JOY1","JOY2",0};
 int getinputtype(char *s)
 {
- for (int i=0; inputtypes[i]; i++)
+ for (i=0; inputtypes[i]; i++)
   if (!stricmp(s,inputtypes[i])) return i;
 
  msg.error("Invalid input type %s. Valid types are: ",s);
