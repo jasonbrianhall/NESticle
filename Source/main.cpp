@@ -246,7 +246,7 @@ void updatescreen()
  if (cfg->get(CFG_SHOWFPS))
   {
    drawrect(screen,0,SCREENX-70+23,40-1,30,10);
-   font[3]->printf(SCREENX-70,40,"fps=%4.1f",pf.frames.getrate());
+   font[3]->printfile(SCREENX-70,40,"fps=%4.1f",pf.frames.getrate());
   }
 
 //  font[0]->printf(SCREENX-150,80,"%X",m6502pc);
