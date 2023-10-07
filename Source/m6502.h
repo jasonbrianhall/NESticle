@@ -21,9 +21,9 @@ typedef uint32_t dword;
 
 //asm funcs
 extern "C" {
- int  __cdecl n6502_execute();
- void __cdecl n6502_nmi();
- void __cdecl n6502_int();
+ int  n6502_execute();
+ void n6502_nmi();
+ void n6502_int();
 };
 
 
