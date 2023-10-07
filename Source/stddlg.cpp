@@ -310,7 +310,7 @@ menu filemenu=
   {"Get ROM info",m_getrominfo,0,0},
   {"Write NES header",m_writeromheader,0,0},
   {"-----",0,0,0},
-  {"Save PCX snapshot",m_snapshot,KB_F9|0x80,0},
+  {"Save PCX snapshot",m_snapshot,char(KB_F9|0x80),0},
   {"Save Palette",m_savepalette,0,0},
   {"-----",0,0,0},
   {"Exit",m_quit,'q',0},
@@ -330,8 +330,8 @@ menu NESmenu=
   {"Advance frame",m_advanceframe,'a',0},
   {"Trace",m_step,'t',0},
   {"-----",0,0,0},
-  {"Save NES state",m_savestate,KB_F5|0x80,0},
-  {"Restore NES state",m_loadstate,KB_F7|0x80,0},
+  {"Save NES state",m_savestate,char(KB_F5|0x80),0},
+  {"Restore NES state",m_loadstate,char(KB_F7|0x80),0},
   {0,NULL,0,0},
  }
 };
@@ -340,11 +340,11 @@ menu NESmenu=
 menu viewmenu=
 {
  {
-  {"Messages",m_showmessages,KB_F1|0x80,0},
+  {"Messages",m_showmessages,char(KB_F1|0x80),0},
   {"-----",0,0,0},
-  {"Pattern tables",m_patternview,KB_F2|0x80,0},
-  {"Name tables",m_nametableview,KB_F3|0x80,0},
-  {"Palette",m_paletteview,KB_F4|0x80,0},
+  {"Pattern tables",m_patternview,char(KB_F2|0x80),0},
+  {"Name tables",m_nametableview,char(KB_F3|0x80),0},
+  {"Palette",m_paletteview,char(KB_F4|0x80),0},
   {"Wave output",m_waveoutputview,0,0},
   {0,NULL,0,0},
  }
@@ -379,7 +379,7 @@ menu settingsmenu=
  {
   {"Redefine input",0,0,&redefineinputmenu},
   {"Resolution",0,0,&resmenu},
-  {"Toggle sound",togglesound,KB_F8|0x80,0},
+  {"Toggle sound",togglesound,char(KB_F8|0x80),0},
   {"Flip mirroring",m_flipmirror,'f',0},
   {"NES Timing...",m_nestimingview,0,0},
 
