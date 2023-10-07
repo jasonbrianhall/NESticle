@@ -31,8 +31,8 @@ virtual void add(char *m,int color=0);
 //void __cdecl printf(int color,char *format, ...);
 //void __cdecl error(char *format,...);
 void draw(int x,int y,int first,int numtodraw);
-void printf(int color,char *format, ...)
-void error(char *format, ...)
+void printf(int color,char *format, ...);
+void error(char *format, ...);
 };
 
 extern msgbuffer msg;

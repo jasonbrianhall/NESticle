@@ -6,14 +6,13 @@
 #include <dirent.h>
 #include <cstring>
 #include <string.h>
+#include <unistd.h>
 
 #include "dd.h"
 
 #include "config.h"
 #include "command.h"
 #include "message.h"
-
-using std::stricmp;
 
 //----------------------------------------------------
 //defs for system options
