@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <conio.h>
+//#include <conio.h>
 
 #include "types.h"
 #ifdef DOS
