@@ -7,6 +7,7 @@
 
 #include "vol.h"
 #include "volbatch.h"
+#include "message.h"
 
 extern char errstr[];
 extern void cleanexit(int x);
