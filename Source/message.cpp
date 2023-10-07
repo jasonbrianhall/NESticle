@@ -10,6 +10,19 @@
 #include "font.h"
 #include "dd.h"
 
+int stricmp(const char* s1, const char* s2) {
+  while(*s1 && *s2) {
+    if (tolower(*s1) != tolower(*s2)) {
+      return tolower(*s1) - tolower(*s2);
+    }
+    s1++;
+    s2++;
+  }
+
+  return tolower(*s1) - tolower(*s2);
+}
+
+
 inline void MESSAGE::draw(int x,int y)
 {
  font[color]->draw(s,screen,x,y);

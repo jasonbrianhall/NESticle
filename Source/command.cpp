@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <cstring>
+#include <string.h>
 
 #include "dd.h"
 
@@ -12,6 +13,7 @@
 #include "command.h"
 #include "message.h"
 
+using std::stricmp;
 
 //----------------------------------------------------
 //defs for system options

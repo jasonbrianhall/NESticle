@@ -14,6 +14,8 @@ struct MESSAGE {
 };
 
 
+int stricmp(const char* s1, const char* s2);
+
 class msgbuffer
 {
  //array of messages
