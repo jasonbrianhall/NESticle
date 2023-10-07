@@ -10,7 +10,8 @@ struct FONT
   
  int draw(char c,char *d,int x,int y);
  void draw(char *str,char *d,int x,int y);
- //void __cdecl printf(int x,int y,char *format,...);
+ //void __cdecl printfile(int x,int y,char *format,...);
+ void printfile(int x, int y, char *format, ...);
 
  int getwidth(char *s);
  int getwidth(char c);

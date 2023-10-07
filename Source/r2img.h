@@ -1,15 +1,3 @@
-extern "C" {
- void __cdecl drawimager2(struct IMG *s,char *d,int x,int y,int o);
- void __cdecl loadpalette8(struct VBE_palette *c,int first,int num);
- void __cdecl loadpalette6(struct VBE_palette *c,int first,int num);
- #ifdef DOS
- void __cdecl drawrect(char *d,int color,int x,int y,int xw,int yw);
- #endif
- void __cdecl drawrectmap(char *d,struct COLORMAP *c,int x,int y,int xw,int yw);
- void __cdecl drawhline(char *d,int color,int x,int y,int x2);
- void __cdecl drawvline(char *d,int color,int x,int y,int y2);
-};
-
 #ifdef __WATCOMC__
 #pragma aux drawimager2 modify[eax ecx edx];
 #pragma aux drawhline  modify[eax ecx edx];
@@ -118,4 +106,20 @@ SCR *loadscreen(char *file);
 //reads uncompressed bitmap from a .BBM or .LBM file
 SCR *ReadLBMFile(char *file);
 
-
+extern "C" {
+ //void __cdecl drawimager2(struct IMG *s,char *d,int x,int y,int o);
+ void drawimager2(struct IMG *s,char *d,int x,int y,int o);
+ //void __cdecl loadpalette8(struct VBE_palette *c,int first,int num);
+ void loadpalette8(struct VBE_palette *c,int first,int num);
+ //void __cdecl loadpalette6(struct VBE_palette *c,int first,int num);
+ void loadpalette6(struct VBE_palette *c,int first,int num);
+#ifdef DOS
+ void __cdecl drawrect(char *d,int color,int x,int y,int xw,int yw);
+ #endif
+ //void __cdecl drawrectmap(char *d,struct COLORMAP *c,int x,int y,int xw,int yw);
+ void drawrectmap(char *d,struct COLORMAP *c,int x,int y,int xw,int yw);
+ //void __cdecl drawhline(char *d,int color,int x,int y,int x2);
+ void drawhline(char *d,int color,int x,int y,int x2);
+ //void __cdecl drawvline(char *d,int color,int x,int y,int y2);
+ void drawvline(char *d,int color,int x,int y,int y2);
+};

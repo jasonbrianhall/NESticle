@@ -55,7 +55,7 @@ void togglesound()
 
 void neschannel::print(int x,int y)
 {
- font[(enabled&&noteon) ? 2 : 1]->printf(x,y,
+ font[(enabled&&noteon) ? 2 : 1]->printfile(x,y,
     "%02X %cf=%03X t=%02X %X %d %X",
     r[0],
 //   "pbr=%X dt=%X %c%c%c f=%03X t=%02X",

@@ -66,7 +66,7 @@ int FONT::getwidth(char *str)
 
 extern char *screen;
 //printf w/font to char *screen
-void __cdecl FONT::printf(int x,int y,char *format,...)
+void __cdecl FONT::printfile(int x,int y,char *format,...)
 {
  char s[256];
 
