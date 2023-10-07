@@ -90,7 +90,7 @@ void profcounter::draw(char *str,int x,int y)
  int sw=font[0]->getwidth(str);
  font[3]->draw(str,screen,x-sw-8,y);
 
- font[1]->printf(x,y,"%.02f",getrate());
+ font[1]->printfile(x,y,"%.02f",getrate());
 }
 
 //------------------------------------
@@ -111,7 +111,7 @@ void proftimer::draw(char *str,int x,int y)
  int sw=font[0]->getwidth(str);
  font[3]->draw(str,screen,x-sw-8,y);
 
- font[1]->printf(x,y,"%5.02f%%",getrate());
+ font[1]->printfile(x,y,"%5.02f%%",getrate());
 }
 
 extern int guienabled;
