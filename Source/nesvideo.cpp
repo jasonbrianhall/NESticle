@@ -271,8 +271,9 @@ class patternmapcache
  //get a certain mattern map
  patternmap *get(patterntable &a,patterntable &b)
   {
+   int i;
    //see if it exists already
-   for (int i=0; i<8; i++)
+   for (i=0; i<8; i++)
      if (pm[i] && pm[i]->from==a && pm[i]->to==b)
        {pm[i]->time=uu; return pm[i];}
    //doesn't exist so create one...
@@ -297,6 +298,7 @@ patternmapcache pmcache;
 
 void natablecache::setpatterntable(patterntable &newp)
  {
+  int i;
   if (numvrom) //vrom
    {
     if (pt==newp) return;
@@ -307,7 +309,7 @@ void natablecache::setpatterntable(patterntable &newp)
    {
     pt=newp;
     //have we updated any of the patterns in the bg?
-    for (int i=0; i<4; i++)
+    for (i=0; i<4; i++)
      if (nv->pt1kupdated[pt.bank[i]]) break;
     if (i==4) return; //not been updated
     //create pattern translation and apply it
@@ -714,7 +716,7 @@ if (showvframeinfo)
 /*  font[3]->printf(50,20,"hblankcycles=%d",HBLANKCYCLES);
   font[3]->printf(50,30,"totallines=%d",TOTALLINES);
   font[3]->printf(50,40,"vblanklines=%d",VBLANKLINES);*/
-  font[3]->printf(50,50,"sprite[0].y=%d",spritemem[0].y);
+  font[3]->printfile(50,50,"sprite[0].y=%d",spritemem[0].y);
 
   sl.print(50,60);
   sc.print(200,50);
