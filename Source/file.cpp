@@ -1,11 +1,13 @@
-#include <sys\types.h>
-#include <sys\stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
-#include <io.h>
+//#include <io.h>
 #include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "file.h"
 
@@ -73,7 +75,6 @@ void enumdir(char *path, DIRFUNCPTR func,void *context)
 
 
 
-
 //---------------------------------------------
 //---------------------------------------------
 #include "message.h"
@@ -81,13 +82,16 @@ void enumdir(char *path, DIRFUNCPTR func,void *context)
 int FILEIO::open(char *filename)
 {
  if (h) close(); //already open
- _fmode=O_BINARY;
+ //_fmode=O_RDWR;
  #ifdef WIN95
  h=::open(filename,O_RDWR|O_BINARY);
  #endif
  #ifdef DOS
 // h=open_doslf(filename);
  h=::open(filename,O_RDWR|O_BINARY);
+ #endif
+ #ifdef __unix__
+ h=::open(filename,O_RDWR);
  #endif
  if (h==-1) {h=0; return -1;} //error
  return 0;
@@ -96,7 +100,7 @@ int FILEIO::open(char *filename)
 int FILEIO::create(char *filename)
 {
  if (h) close();
- _fmode=O_BINARY;
+ //_fmode=O_RDWR;
  #ifdef WIN95
  #ifdef __WATCOMC__
  h=creat(filename,S_IWRITE|S_IREAD);
