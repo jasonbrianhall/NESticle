@@ -46,7 +46,7 @@ struct COLOR
 };
 
 //palette
-struct PALETTE
+/* struct PALETTE
 {
  COLOR c[]; //colors in palette
 
@@ -54,6 +54,30 @@ struct PALETTE
  PALETTE *duplicate(int num);
  void fade(PALETTE &p,int num,int level); //level 0-31
  int findclosestmatch(COLOR &a,int num);
+};*/
+
+struct PALETTE {
+    int num_colors; // Number of colors in the palette
+    COLOR *c;       // Pointer to an array of colors
+
+    // Constructor to allocate memory for the color array
+    PALETTE(int numColors) : num_colors(numColors) {
+        c = new COLOR[numColors];
+    }
+
+    // Destructor to free the allocated memory
+    ~PALETTE() {
+        delete[] c;
+    }
+
+    // Duplicate the palette with a specified number of colors
+    PALETTE *duplicate(int num);
+
+    // Fade the colors in the palette
+    void fade(PALETTE &p, int num, int level);
+
+    // Find the closest match for a color in the palette
+    int findclosestmatch(COLOR &a, int num);
 };
 
 //color index mapping
