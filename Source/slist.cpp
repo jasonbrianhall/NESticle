@@ -20,23 +20,23 @@
 void sevent::print(int x,int y)
 {
  if (type>=SE_VROM1K)
-    font[5]->printf(x,y,"line=%d vrom1k%d=%d",line,type-SE_VROM1K,data);
+    font[5]->printfile(x,y,"line=%d vrom1k%d=%d",line,type-SE_VROM1K,data);
   else
  switch (type)
  {
-  case SE_NATABLE: font[1]->printf(x,y,"line=%d natable=%d",line,data); break; //t[0],pc); break;
-  case SE_SCROLLX: font[1]->printf(x,y,"line=%d scrollx=%d",line,data); break; //t[0],pc); break;
-  case SE_SCROLLY: font[1]->printf(x,y,"line=%d scrolly=%d",line,data); break; //t[0],pc); break;
-  case SE_SPRITE:  font[1]->printf(x,y,"line=%d sprites=%s",line,data ? "on" : "off"); break; //t[0],pc); break;
-  case SE_BG:  font[1]->printf(x,y,"line=%d bg=%s",line,data ? "on" : "off"); break; //t[0],pc); break;
-  case SE_FRAMESTART:  font[2]->printf(x,y,"line=%d vframe start",line); break; //t[0],pc); break;
-  case SE_BGPT: font[1]->printf(x,y,"line=%d bgptable=%d",line,data); break; //t[0],pc); break;
-  case SE_SPRITEPT: font[1]->printf(x,y,"line=%d spriteptable=%d",line,data); break; //t[0],pc); break;
-  case SE_IRQLINE: font[2]->printf(x,y,"line=%d IRQ!",line,data); break; //t[0],pc); break;
+  case SE_NATABLE: font[1]->printfile(x,y,"line=%d natable=%d",line,data); break; //t[0],pc); break;
+  case SE_SCROLLX: font[1]->printfile(x,y,"line=%d scrollx=%d",line,data); break; //t[0],pc); break;
+  case SE_SCROLLY: font[1]->printfile(x,y,"line=%d scrolly=%d",line,data); break; //t[0],pc); break;
+  case SE_SPRITE:  font[1]->printfile(x,y,"line=%d sprites=%s",line,data ? "on" : "off"); break; //t[0],pc); break;
+  case SE_BG:  font[1]->printfile(x,y,"line=%d bg=%s",line,data ? "on" : "off"); break; //t[0],pc); break;
+  case SE_FRAMESTART:  font[2]->printfile(x,y,"line=%d vframe start",line); break; //t[0],pc); break;
+  case SE_BGPT: font[1]->printfile(x,y,"line=%d bgptable=%d",line,data); break; //t[0],pc); break;
+  case SE_SPRITEPT: font[1]->printfile(x,y,"line=%d spriteptable=%d",line,data); break; //t[0],pc); break;
+  case SE_IRQLINE: font[2]->printfile(x,y,"line=%d IRQ!",line,data); break; //t[0],pc); break;
 
-  case SE_VROM8K: font[5]->printf(x,y,"line=%d vrom8k=%d",line,data); break; //t[0],pc); break;
-  case SE_VROM4K0: font[5]->printf(x,y,"line=%d vrom4k0=%d",line,data); break; //t[0],pc); break;
-  case SE_VROM4K1: font[5]->printf(x,y,"line=%d vrom4k1=%d",line,data); break; //t[0],pc); break;
+  case SE_VROM8K: font[5]->printfile(x,y,"line=%d vrom8k=%d",line,data); break; //t[0],pc); break;
+  case SE_VROM4K0: font[5]->printfile(x,y,"line=%d vrom4k0=%d",line,data); break; //t[0],pc); break;
+  case SE_VROM4K1: font[5]->printfile(x,y,"line=%d vrom4k1=%d",line,data); break; //t[0],pc); break;
 
  }
 }
@@ -106,6 +106,7 @@ extern byte doIRQ;
 //create contexts list from eventlist
 void scontextlist::create(seventlist &el)
 {
+ int i;
  scnum=0;
 
  //create first context
@@ -153,7 +154,7 @@ void scontextlist::create(seventlist &el)
 
 void scontext::print(int x,int y)
 {
- font[this==nv->sc.biggestsc ? 2 : 1]->printf(x,y,"line=%d ht=%d scroll=%d,%d na=%d sp=%d pt=%d",line,height,sx,sy,natable,sprites,bgpt);
+ font[this==nv->sc.biggestsc ? 2 : 1]->printfile(x,y,"line=%d ht=%d scroll=%d,%d na=%d sp=%d pt=%d",line,height,sx,sy,natable,sprites,bgpt);
 }
 
 void scontextlist::print(int x,int y)
