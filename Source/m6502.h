@@ -15,6 +15,8 @@
 #define F_OVER   0x40
 #define F_SIGN   0x80
 
+#include <cstdint>
+
 typedef uint32_t dword;
 
 //asm funcs
