@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
-#include <process.h>
+//#include <process.h>
 
 #include "types.h"
 
@@ -15,7 +15,7 @@
 #define FREE(x) if (x) {free(x); x=0;}
 #define DELETE(x) if (x) {delete x; x=0;}
 
-#include "m6502\m6502.h"
+#include "m6502.h"
 #include "timing.h"
 
 #include "nesvideo.h"
