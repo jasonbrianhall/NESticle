@@ -2,7 +2,7 @@
 //volume file manager
 #include <string.h>
 #include <stdio.h>
-#include <conio.h>
+//#include <conio.h>
 #include <stdlib.h>
 
 #include "vol.h"
@@ -157,21 +157,23 @@ if (vdiagnose)
 
 void GetFileName(char *fullname, char *name)
 {
+ int i,j;
  if (!fullname) {name[0]=0; return;}
- for (int i=0; fullname[i] && fullname[i]!='.'; i++); //find period
+ for (i=0; fullname[i] && fullname[i]!='.'; i++); //find period
  int p=i; //period location
  for ( ; i>0 && fullname[i]!='\\'; i--); //find beginning of name
  if (i>0) i++;
- for (int j=0; i<p; i++,j++) name[j]=fullname[i]; //copy name
+ for (j=0; i<p; i++,j++) name[j]=fullname[i]; //copy name
  name[j]=0;
 }
 
 void GetFileExtension(char *fullname, char *ext)
 {
- for (int i=0; fullname[i] && fullname[i]!='.'; i++); //find period
+ int i,j;
+ for (i=0; fullname[i] && fullname[i]!='.'; i++); //find period
  if (!fullname[i]) {ext[0]=0; return;} //no period found
  i++;
- for (int j=0; j<3; j++,i++) ext[j]=fullname[i];
+ for (j=0; j<3; j++,i++) ext[j]=fullname[i];
  ext[j]=0;
 }
 
