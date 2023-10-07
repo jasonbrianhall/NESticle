@@ -4,15 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
-#include <process.h>
-#include <sys\stat.h>
+//#include <process.h>
+#include <sys/stat.h>
 
 #include "types.h"
 
 #include "message.h"
 #include "file.h"
 
-#include "m6502\m6502.h"
+#include "m6502.h"
 
 #include "keyb.h"
 
