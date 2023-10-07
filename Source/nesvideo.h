@@ -5,9 +5,9 @@
 #include "ppu.h"
 
 extern "C" {
- void __cdecl draw_tile_asm(struct bitmap8x8 *b,char *dest,int x,int y,byte pal);
- void __cdecl draw_sprite_asm(struct bitmap8x8 *b,char *dest,int x,int y,int o,byte pal);
- void __cdecl draw_sprite_behind_asm(struct bitmap8x8 *b,char *dest,int x,int y,int o,byte pal);
+ void draw_tile_asm(struct bitmap8x8 *b,char *dest,int x,int y,byte pal);
+ void draw_sprite_asm(struct bitmap8x8 *b,char *dest,int x,int y,int o,byte pal);
+ void draw_sprite_behind_asm(struct bitmap8x8 *b,char *dest,int x,int y,int o,byte pal);
 };
 #ifdef __WATCOMC__
 #pragma aux draw_tile_asm modify[eax ecx edx];
