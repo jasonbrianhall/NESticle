@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
-#include <dos.h>
+//#include <dos.h>
 #include <fcntl.h>
-#include <io.h>
+//#include <io.h>
 #include <string.h>
-#include <conio.h>
+//#include <conio.h>
 #include <ctype.h>
-#include <direct.h>
+//#include <direct.h>
 
 //functions for image 
 #include "r2img.h"
@@ -61,7 +61,7 @@ SCR *SCR::newSCR(int x,int y)
 
 
 extern "C" {
- void __cdecl drawscr(char *s,char *d,int xw,int yw,int pitch);
+ void drawscr(char *s,char *d,int xw,int yw,int pitch);
 };
 
 //draws uncompressed bitmap
