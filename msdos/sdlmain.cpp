@@ -1,4 +1,5 @@
-//NESticle platform layer for MS-DOS (DJGPP), on SDL3's DOS port.
+//NESticle platform layer on SDL3: MS-DOS (DJGPP, SDL3's DOS port), and
+//Linux / Windows (../linux, ../windows: a window instead of a video mode).
 //
 //Takes the place of the original DOS\DOS.CPP, DOS\KEYB.CPP, DOS\MODEX.CPP,
 //DOS\TTIMER.CPP, DOS\SMIX.CPP and the TASM joystick/mouse routines, which
@@ -178,6 +179,7 @@ static void applypalette()
  palchanged=0;
 }
 
+#ifdef __DJGPP__
 //set the display mode for our screen size
 static int setvideomode()
 {
@@ -211,6 +213,36 @@ static int setvideomode()
    SDL_BITSPERPIXEL(winsurf->format),SCREENX,SCREENY,scale);
  return 1;
 }
+#else
+//Linux, Windows: a resizable window (Alt+Enter: full screen), the screen
+//scaled into it by a whole number
+static int setvideomode()
+{
+ if (!window)
+  {
+   window=SDL_CreateWindow("NESticle",SCREENX*3,SCREENY*3,SDL_WINDOW_RESIZABLE);
+   if (!window) {sprintf(errstr,"SDL_CreateWindow: %.50s",SDL_GetError()); return 0;}
+  }
+ winsurf=SDL_GetWindowSurface(window);
+ if (!winsurf) {sprintf(errstr,"SDL_GetWindowSurface: %.50s",SDL_GetError()); return 0;}
+ indexed=0;
+ SDL_SetWindowSurfaceVSync(window,waitvsync ? 1 : SDL_WINDOW_SURFACE_VSYNC_DISABLED);
+ SDL_HideCursor();
+ layout();
+ applypalette();
+ msg.printf(2,"Video: %dx%d window, %dx%d screen x%d",winsurf->w,winsurf->h,SCREENX,SCREENY,scale);
+ return 1;
+}
+
+//the window changed size
+static void windowresized()
+{
+ winsurf=SDL_GetWindowSurface(window);
+ if (!winsurf) return;
+ layout();
+ applypalette();
+}
+#endif
 
 void changeresolution(int x,int y)
 {
@@ -500,6 +532,14 @@ static int mousex=0,mousey=0,mouseb=0;
 
 static void mousemove(float wx,float wy)
 {
+ #ifndef __DJGPP__
+ if (window && winsurf)
+  {
+   int ww,wh;
+   SDL_GetWindowSize(window,&ww,&wh);
+   if (ww>0 && wh>0) {wx=wx*winsurf->w/ww; wy=wy*winsurf->h/wh;}
+  }
+ #endif
  int x=((int)wx-dest.x)/scale;
  int y=((int)wy-dest.y)/scale;
  if (x<0) x=0;
@@ -651,6 +691,13 @@ int main(int argc,char *argv[])
    if (!SDL_Init(SDL_INIT_VIDEO)) return 1;
   }
  sdlstarted=1;
+ #ifndef __DJGPP__
+ {
+  extern char exedir[260];
+  const char *b=SDL_GetBasePath();
+  if (b) {strncpy(exedir,b,259); exedir[259]=0;}
+ }
+ #endif
 
  int njoy=0;
  SDL_JoystickID *joys=SDL_GetJoysticks(&njoy);
@@ -695,7 +742,20 @@ int main(int argc,char *argv[])
    switch (e.type)
     {
      case SDL_EVENT_QUIT: quit=1; break;
-     case SDL_EVENT_KEY_DOWN: keyevent(e.key.scancode,1,e.key.repeat); break;
+     #ifndef __DJGPP__
+     case SDL_EVENT_WINDOW_RESIZED:
+     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: windowresized(); break;
+     #endif
+     case SDL_EVENT_KEY_DOWN:
+      #ifndef __DJGPP__
+      //Alt+Enter: full screen / window
+      if (e.key.scancode==SDL_SCANCODE_RETURN && (e.key.mod&SDL_KMOD_ALT) && !e.key.repeat)
+       {
+        SDL_SetWindowFullscreen(window,!(SDL_GetWindowFlags(window)&SDL_WINDOW_FULLSCREEN));
+        break;
+       }
+      #endif
+      keyevent(e.key.scancode,1,e.key.repeat); break;
      case SDL_EVENT_KEY_UP:   keyevent(e.key.scancode,0,0); break;
      case SDL_EVENT_MOUSE_MOTION: mousemove(e.motion.x,e.motion.y); break;
      case SDL_EVENT_MOUSE_BUTTON_DOWN: mousemove(e.button.x,e.button.y); mouseb|=mousebit(e.button.button); break;

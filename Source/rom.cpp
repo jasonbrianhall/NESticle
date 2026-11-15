@@ -78,7 +78,8 @@ void loadrom(char *romfile)
 
  msg.printf(2,"Loading rom %s...",s);
  FILEIO f;
- if (f.open(s)) {msg.error("Unable to open file %s",s); return;}
+ //(the name as given first: on Linux SMB.NES isn't SMB.nes)
+ if (f.open(romfile) && f.open(s)) {msg.error("Unable to open file %s",s); return;}
 
  //read header
  if (f.read(&romhdr,sizeof(romhdr))) {msg.error("Unable to read header"); return;}

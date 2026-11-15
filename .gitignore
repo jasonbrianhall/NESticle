@@ -32,3 +32,8 @@
 *.app
 
 \.DS_Store
+/linux/build/
+/linux/nesticle
+/windows/build/
+/windows/nesticle.exe
+/windows/SDL3.dll
