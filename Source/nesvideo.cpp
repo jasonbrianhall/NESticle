@@ -643,6 +643,18 @@ void viewcolor(byte colornum);
 void takesnapshot(char *dest,lrect &r);
 
 extern int guienabled;
+
+//where the last frame went on our screen (the port scales just that part to
+//the window while the game is maximized and the GUI is off)
+static lrect lastnesrect;
+int nesgamerect(int *x,int *y,int *w,int *h)
+{
+ if (!nv || !nv->maximized || guienabled) return 0;
+ *x=lastnesrect.x1; *y=lastnesrect.y1;
+ *w=lastnesrect.x2-lastnesrect.x1; *h=lastnesrect.y2-lastnesrect.y1;
+ return *w>0 && *h>0;
+}
+
 //update screen
 void nesvideo::draw(char *dest)
 {
@@ -676,6 +688,7 @@ void nesvideo::draw(char *dest)
  r.y1=y1+(height()-yw)/2; if (r.y1<0) r.y1=0;
  r.x2=r.x1+xw;
  r.y2=r.y1+yw;
+ lastnesrect=r;
 
  //draw background that should contain sprites
  drawbg(dest,&r,1);
