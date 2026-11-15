@@ -138,6 +138,9 @@ int initgame()
  //(GUI.VOL isn't in the source release: without it, make our own set)
  int guivol_generate(GUIVOL &v);
  if (!guivol.read("gui.vol") && !guivol_generate(guivol)) return -1;
+ //your own mouse cursor
+ int loadcursorbmp(GUIVOL &v,const char *filename);
+ if (loadcursorbmp(guivol,"cursor.bmp")) msg.printf(2,"Mouse cursor from CURSOR.BMP");
 
  //get palette
  initializenespalette();

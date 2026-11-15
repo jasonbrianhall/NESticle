@@ -64,9 +64,15 @@ void loadrom(char *romfile)
 
  //get rom name without extension
  strcpy(romfilename,romfile);
- if (strchr(romfilename,'.')) *strchr(romfilename,'.')=0;
+ {
+  //(the extension's dot: the last one, after any directory)
+  char *b=strrchr(romfilename,'/'),*b2=strrchr(romfilename,'\\');
+  if (b2>b) b=b2;
+  if (!b) b=romfilename;
+  if (strrchr(b,'.')) *strrchr(b,'.')=0;
+ }
 
- char s[64];
+ char s[160];
  strcpy(s,romfilename);
  strcat(s,".nes"); //add extension
 
@@ -79,7 +85,7 @@ void loadrom(char *romfile)
 
  //see if header file exists ?
  FILEIO g;
- char hdrfile[64];
+ char hdrfile[160];
  strcpy(hdrfile,romfilename);
  strcat(hdrfile,".hdr");
  if (!g.open(hdrfile)) //does header file exist?
@@ -118,7 +124,7 @@ void loadrom(char *romfile)
   } else batterymem=0;
 
   /*
- char expfile[64];
+ char expfile[160];
  strcpy(expfile,romfilename);
  strcat(expfile,".500");
  if (!g.open(expfile)) //exp file exists?
@@ -131,8 +137,12 @@ void loadrom(char *romfile)
  //initialize nes hardware....
  initNEShardware();
 
- //create video space
- new nesvideo(romfilename);
+ //create video space (titled with the name, without the directory)
+ {
+  char *b=strrchr(romfilename,'/'),*b2=strrchr(romfilename,'\\');
+  if (b2>b) b=b2;
+  new nesvideo(b ? b+1 : romfilename);
+ }
 
  //create nes sound device
  ns=new nessound;
@@ -180,7 +190,7 @@ void m_ramdump()
 {
  if (!romloaded) {msg.error("ROM not loaded"); return;}
 
- char s[64];
+ char s[160];
 
  for (int i=0; i<99; i++)
   {
@@ -203,7 +213,7 @@ void m_ramdump()
 void m_romdump()
 {
  if (!romloaded) {msg.error("ROM not loaded"); return;}
- char s[64];
+ char s[160];
  for (int i=0; i<numrom; i++)
   {
    sprintf(s,"%s.R%02X",romfilename,i);
@@ -225,7 +235,7 @@ BATTERYMEM::BATTERYMEM()
 
 void BATTERYMEM::read(char *romfilename)
 {
- char s[64];
+ char s[160];
  strcpy(s,romfilename);
  strcat(s,".sav");
 
@@ -241,7 +251,7 @@ void BATTERYMEM::read(char *romfilename)
 
 void BATTERYMEM::write(char *romfilename)
 {
- char s[64];
+ char s[160];
  strcpy(s,romfilename);
  strcat(s,".sav");
 
@@ -295,7 +305,7 @@ void m_writeromheader()
  //put mirroring in rom
  romhdr.mirroring=nv->mirroring;
 
- char s[64];
+ char s[160];
  strcpy(s,romfilename);
  strcat(s,".nes");
 
@@ -414,7 +424,7 @@ void m_savestate()
  if (!romloaded) {msg.error("ROM not loaded"); return;}
  if (!nv) return;
 
- char s[64];
+ char s[160];
  strcpy(s,romfilename);
  strcat(s,".sta");
 
@@ -435,7 +445,7 @@ void m_loadstate()
  if (!romloaded) {msg.error("ROM not loaded"); return;}
  if (!nv) return;
 
- char s[64];
+ char s[160];
  strcpy(s,romfilename);
  strcat(s,".sta");
 

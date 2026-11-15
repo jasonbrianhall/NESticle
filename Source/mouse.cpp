@@ -66,10 +66,12 @@ void mouse::updatebut(int newb)
 }
 
 
+extern int cursorhotx,cursorhoty; //(CURSOR.BMP's hot spot, see port/guidata.cpp)
+
 void mouse::draw(char *dest)
 {
  if (!hidden)
- guivol.cursor->draw(dest,x,y);
+ guivol.cursor->draw(dest,x-cursorhotx,y-cursorhoty);
 }
 
 

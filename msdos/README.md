@@ -41,8 +41,17 @@ cycles=max), 8 MB of RAM, VGA. A VESA BIOS gives the 320x240 and bigger
 the BLASTER variable set (e.g. SET BLASTER=A220 I7 D1 H5 T6); -nosound to
 turn it off. A mouse driver for the GUI. Optional gameport joystick.
 
-ROMs go next to NESTICLE.EXE (8.3 names, .NES). Battery saves, snapshots
-(.PCX), save states and NESticle.cfg are written there too.
+ROMs (.NES) can be anywhere: File > Load ROM browses folders ([NAME] opens a
+folder, [..] goes up). Long file names work where DOS has them (Windows 9x,
+DOSLFN; SET LFN=N turns them off). Battery saves (.SAV), snapshots (.PCX) and
+save states go next to the ROM; NESticle.cfg in the folder you start from.
+
+GUI art: the original GUI.VOL isn't in the source release, so NESticle makes
+its own palette, font and icons (and a bleeding hand cursor). If you have
+the original GUI.VOL, put it next to NESTICLE.EXE and it's used instead. For
+just the mouse cursor, put a CURSOR.BMP there: actual size (up to 64x64),
+1/4/8/24/32-bit uncompressed; its top left pixel's color is transparent, and
+the topmost pixel (the fingertip) is the hot spot.
 
 The video mode: by default the 8-bit mode that fits the desktop best (VESA
 320x240 for the default 320x240 desktop); to choose, set NESTICLE_VIDEO

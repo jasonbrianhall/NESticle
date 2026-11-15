@@ -10,6 +10,7 @@
 //main.cpp): colors 0-15 a grey ramp from black to white, then ramps of
 //hues 16 to a row, bright to dark. 224-255 are left for the NES palette.
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -91,29 +92,35 @@ static IMG *imgfromstrings(const char **pic,int h,const char *keys,const unsigne
  return s->compress((char)TRANSPARENT);
 }
 
+//the mouse cursor: a severed hand pointing (the hot spot is the fingertip,
+//top left), dripping blood
 static IMG *mkcursor()
 {
  static const char *pic[]=
  {
-  "X.........",
-  "XX........",
-  "XWX.......",
-  "XWWX......",
-  "XWWWX.....",
-  "XWWWWX....",
-  "XWWWWWX...",
-  "XWWWWWWX..",
-  "XWWWWWWWX.",
-  "XWWWWWXXXX",
-  "XWWXWWX...",
-  "XWX.XWWX..",
-  "XX..XWWX..",
-  "X....XWWX.",
-  ".....XWWX.",
-  "......XX..",
+  ".XX.............",
+  "XWSX............",
+  "XWSX............",
+  "XWSX............",
+  "XWSXXX.XX.......",
+  "XWSXWSXWSXX.....",
+  "XWSXWSXWSXSX....",
+  "XWSSWSSWSXSX....",
+  "XWSSSSSSSSSDX...",
+  "XWSSSSSSSSSDX...",
+  "XWSSSSSSSSDDX...",
+  ".XWSSSSSSSDDX...",
+  ".XWSSSSSSDDX....",
+  "..XWSSSSDDDX....",
+  "..XRRRRRRRRX....",
+  "..XrRRRRRRrX....",
+  "...XXrRXrXX.....",
+  ".....RX.R.......",
+  ".....r..R.......",
+  "........r.......",
  };
- static const unsigned char c[]={0,15};
- return imgfromstrings(pic,16,"XW",c);
+ static const unsigned char c[]={0,0xC1,0xC4,0xC8,0x21,0x26};
+ return imgfromstrings(pic,20,"XWSDRr",c);
 }
 
 static IMG *mkcheckmark()
@@ -294,5 +301,85 @@ int guivol_generate(GUIVOL &v)
  v.playlooped=mkicon(2);
  v.active=mkicon(3);
  v.xmark=mkxmark();
+ return 1;
+}
+
+//----------------------------------------------------------------
+//a mouse cursor from CURSOR.BMP, if there is one: to use your own (the
+//original NESticle hand, say) without GUI.VOL. Uncompressed 1, 4, 8, 24 or 32
+//bit BMP, actual size (up to 64x64). The color of its top left pixel is
+//transparent; the hot spot is its topmost pixel (the fingertip).
+//Colors map to the nearest GUI palette color.
+
+int cursorhotx=0,cursorhoty=0;
+
+static unsigned rd16(const unsigned char *p) {return p[0]|(p[1]<<8);}
+static unsigned rd32(const unsigned char *p) {return p[0]|(p[1]<<8)|(p[2]<<16)|((unsigned)p[3]<<24);}
+
+int loadcursorbmp(GUIVOL &v,const char *filename)
+{
+ FILE *f=fopen(filename,"rb");
+ if (!f) return 0;
+ fseek(f,0,SEEK_END);
+ long len=ftell(f);
+ fseek(f,0,SEEK_SET);
+ if (len<54 || len>1000000) {fclose(f); return 0;}
+ unsigned char *b=(unsigned char *)malloc(len);
+ int ok=fread(b,1,len,f)==(size_t)len;
+ fclose(f);
+
+ int w=0,h=0,bpp=0,topdown=0;
+ unsigned off=0,dib=0;
+ if (ok && b[0]=='B' && b[1]=='M')
+  {
+   off=rd32(b+10); dib=rd32(b+14);
+   w=(int)rd32(b+18); h=(int)rd32(b+22);
+   bpp=rd16(b+28);
+   unsigned comp=rd32(b+30);
+   if (h<0) {h=-h; topdown=1;}
+   if (!(comp==0 || (comp==3 && bpp==32))) ok=0;
+   if (bpp!=1 && bpp!=4 && bpp!=8 && bpp!=24 && bpp!=32) ok=0;
+   if (w<1 || h<1 || w>64 || h>64) ok=0;
+  }
+ else ok=0;
+ int pitch=((w*bpp+31)/32)*4;
+ if (ok && off+(long)pitch*h>(unsigned long)len) ok=0;
+ if (!ok) {free(b); return 0;}
+
+ //pixel (x,y) as 8-bit RGB
+ #define BMPPIX(x,y,r,g,bl) { \
+   const unsigned char *row=b+off+(topdown ? (y) : h-1-(y))*pitch; \
+   if (bpp<=8) { \
+     int ix=bpp==8 ? row[x] : bpp==4 ? (row[(x)/2]>>((x)&1 ? 0 : 4))&15 : (row[(x)/8]>>(7-((x)&7)))&1; \
+     const unsigned char *pe=b+14+dib+ix*4; bl=pe[0]; g=pe[1]; r=pe[2];} \
+   else {const unsigned char *px=row+(x)*(bpp/8); bl=px[0]; g=px[1]; r=px[2];} }
+
+ int tr,tg,tb;
+ BMPPIX(0,0,tr,tg,tb);
+ SCR *s=SCR::newSCR(w,h);
+ char *d=s->data();
+ int hot=0;
+ for (int y=0; y<h; y++)
+  for (int x=0; x<w; x++)
+   {
+    int r,g,bl;
+    BMPPIX(x,y,r,g,bl);
+    if (r==tr && g==tg && bl==tb) {d[y*w+x]=(char)TRANSPARENT; continue;}
+    if (!hot) {hot=1; cursorhotx=x; cursorhoty=y;}
+    //nearest GUI color (not the NES colors, 224-255); the palette is 6-bit here
+    int best=0,bestd=0x7FFFFFFF;
+    for (int i=0; i<224; i++)
+     {
+      int dr=v.pal->c[i].r-(r>>2),dg=v.pal->c[i].g-(g>>2),db=v.pal->c[i].b-(bl>>2);
+      int dd=dr*dr*3+dg*dg*4+db*db*2;
+      if (dd<bestd) {bestd=dd; best=i;}
+     }
+    if (best==TRANSPARENT) best=0;
+    d[y*w+x]=(char)best;
+   }
+ #undef BMPPIX
+ free(b);
+ if (!hot) {free(s); return 0;}
+ v.cursor=s->compress((char)TRANSPARENT);
  return 1;
 }

@@ -61,7 +61,7 @@ void takesnapshot(char *dest,lrect &r)
     *t=(dest[y*PITCH+x]&0x1F)+16;
 
 
- char name[80];
+ char name[160];
  strcpy(name,romfilename);
  strcat(name,".pcx");
 

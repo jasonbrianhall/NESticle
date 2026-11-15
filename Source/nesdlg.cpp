@@ -53,28 +53,102 @@ int filldirlistbox(char *filename,class GUIdirlistbox *b);
 
 int USERENTRY dirlistcmp(char **a,char **b) {return stricmp(*a,*b);}
 
+#ifdef __GNUC__
+//directories first ("[NAME]"), then files
+int USERENTRY dirlistcmp2(char **a,char **b)
+{
+ int da=(**a=='['),db=(**b=='[');
+ if (da!=db) return db-da;
+ return stricmp(*a,*b);
+}
+
+//directory browsing (the original listed *.NES in the current directory only)
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <limits.h>
+
+//dir + "/" + name (no double slash after a root like c:/)
+static void joinpath(char *out,char *dir,char *name)
+{
+ int n=strlen(dir);
+ sprintf(out,(n && (dir[n-1]=='/' || dir[n-1]=='\\')) ? "%s%s" : "%s/%s",dir,name);
+}
+#endif
+
 class GUIdirlistbox:public GUIstringlistbox
 {
  char path[128];
  public:
  void sortdirlist() //sort all entries in list
  {
+  #ifdef __GNUC__
+  qsort((void *)getitems(),getnumitems(),sizeof(char *),(qsortfuncptr)dirlistcmp2);
+  #else
   qsort((void *)getitems(),getnumitems(),4,(qsortfuncptr)dirlistcmp);
+  #endif
+ }
+
+ void freenames()
+ {
+  char **s=(char **)getitems();
+  for (int i=0; i<getnumitems(); i++) if (s[i]) free(s[i]);
+  freeitems();
  }
 
  void setpath(char *_path)
  {
   strcpy(path,_path);    //set path
-  freeitems();
+  freenames();
+  #ifdef __GNUC__
+  //_path is a directory: its subdirectories, then its .NES files
+  DIR *d=opendir(path);
+  if (d)
+   {
+    struct dirent *e;
+    while ((e=readdir(d))!=0)
+     {
+      if (!strcmp(e->d_name,".")) continue;
+      char full[PATH_MAX+260];
+      joinpath(full,path,e->d_name);
+      if (!strcmp(e->d_name,".."))
+       {
+        //not at the root
+        char a[PATH_MAX],b[PATH_MAX];
+        if (realpath(full,a) && realpath(path,b) && !strcmp(a,b)) continue;
+       }
+      struct stat st;
+      if (stat(full,&st)) continue;
+      if (S_ISDIR(st.st_mode))
+       {
+        char s[300];
+        sprintf(s,"[%s]",e->d_name);
+        filldirlistbox(s,this);
+       }
+      else
+       {
+        char *ext=strrchr(e->d_name,'.');
+        if (ext && !stricmp(ext,".nes")) filldirlistbox(e->d_name,this);
+       }
+     }
+    closedir(d);
+   }
+  #else
   enumdir(path,(DIRFUNCPTR)filldirlistbox,this); //fill dir list box
+  #endif
   sortdirlist();
+  clearsel();
+  setsel(0);
  }
+
+ char *getpath() {return path;}
 
  GUIdirlistbox(GUIrect *p,int x,int y,int xw,int iy,char *_path)
   :GUIstringlistbox(p,x,y,xw,iy,10)
   {
    setpath(_path);
   }
+ virtual ~GUIdirlistbox() {freenames();}
 
  virtual char *getname() {return "guidirlist";}
  virtual int acceptfocus() {return 1;}
@@ -94,29 +168,69 @@ int filldirlistbox(char *filename,GUIdirlistbox *b)
 //----------------------
 //   load rom
 //----------------------
+#ifdef __GNUC__
+static char loaddir[PATH_MAX]=""; //last directory browsed
+#endif
+
 class loaddlg:public GUIcontents
 {
- GUIstringlistbox *list;
+ GUIdirlistbox *list;
 
  public:
+ #ifdef __GNUC__
+ loaddlg():GUIcontents(SCREENX>=320 ? 220 : 160,163) //(room for long file names)
+ {
+  if (!loaddir[0] && !getcwd(loaddir,sizeof(loaddir))) strcpy(loaddir,".");
+  list=new GUIdirlistbox(this,5,15,width()-10,14,loaddir);
+ }
+ #else
  loaddlg():GUIcontents(140,150)
  {
 //  list=new GUIstringlistbox(this,5,5,width()-10,9,10);
   list=new GUIdirlistbox(this,5,5,width()-10,14,"*.nes");
   list->setsel(0);
  }
+ #endif
  virtual char *getname() {return "loadrom";}
 
  int sendmessage(GUIrect *c,int guimsg)
   {
    if (guimsg==GUIMSG_OK || guimsg==GUIMSG_LISTBOXDBLCLICKED)
     {
-     loadrom(list->getselptr());
+     char *s=list->getselptr();
+     if (!s) return 0;
+     #ifdef __GNUC__
+     char full[PATH_MAX+300];
+     if (s[0]=='[')
+      {
+       //into a directory: stay open
+       joinpath(full,loaddir,s+1);
+       full[strlen(full)-1]=0; //']'
+       char real[PATH_MAX];
+       if (realpath(full,real)) strcpy(loaddir,real); else strcpy(loaddir,full);
+       list->setpath(loaddir);
+       return 0;
+      }
+     joinpath(full,loaddir,s);
+     loadrom(full);
+     #else
+     loadrom(s);
+     #endif
      return 1;
     }
    return 1;
   };
- virtual void draw(char *dest) {fill(CLR_BOX); GUIrect::draw(dest);}
+ virtual void draw(char *dest)
+  {
+   fill(CLR_BOX);
+   #ifdef __GNUC__
+   //the directory (its end, if it's too long)
+   char *d=loaddir;
+   while (*d && font[3]->getwidth(d)>width()-10) d++;
+   font[3]->draw(d,dest,x1+5,y1+3);
+   #endif
+   GUIrect::draw(dest);
+  }
  virtual int acceptfocus() {return 1;}
 
  //open functions

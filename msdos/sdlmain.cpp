@@ -54,6 +54,10 @@ extern char configfile[];
 extern char waitvsync;
 extern int SOUNDRATE;
 
+#ifdef __DJGPP__
+#include <crt0.h> //_crt0_startup_flags (defined by SDL's DOS main)
+#endif
+
 unsigned ticks=0; //timer ticks (TIMERSPEED a second), for prof.cpp
 
 static int quit=0;
@@ -617,6 +621,11 @@ static void shutdown()
 
 int main(int argc,char *argv[])
 {
+ #ifdef __DJGPP__
+ //long file names are used when DOS has them (Windows 9x, DOSLFN, ...;
+ //SET LFN=N turns them off); show 8.3 names as they are, not lowercased
+ _crt0_startup_flags|=_CRT0_FLAG_PRESERVE_FILENAME_CASE;
+ #endif
  //get configuration
  cfg=new config();
  cfg->load(configfile);
