@@ -376,6 +376,7 @@ msdos: msdos_embedded
 dist: msdos_embedded
 	rm -rf $(BUILD)/dist && mkdir -p $(BUILD)/dist/NESTICLE
 	cp $(DOS_TARGET) $(BUILD)/dist/NESTICLE/NESTICLE.EXE
+	for f in GUI.VOL CURSOR.BMP; do [ ! -f $$f ] || cp $$f $(BUILD)/dist/NESTICLE/; done
 	sed 's/$$/\r/' README.md > $(BUILD)/dist/NESTICLE/README.TXT
 	@echo "Created $(BUILD)/dist/NESTICLE"
 

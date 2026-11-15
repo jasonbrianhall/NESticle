@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #include "../types.h"
 #include "../r2img.h"
@@ -311,7 +312,8 @@ int guivol_generate(GUIVOL &v)
 //transparent; the hot spot is its topmost pixel (the fingertip).
 //Colors map to the nearest GUI palette color.
 
-int cursorhotx=0,cursorhoty=0;
+
+extern int guinumcursorframes; //(below)
 
 static unsigned rd16(const unsigned char *p) {return p[0]|(p[1]<<8);}
 static unsigned rd32(const unsigned char *p) {return p[0]|(p[1]<<8)|(p[2]<<16)|((unsigned)p[3]<<24);}
@@ -365,7 +367,7 @@ int loadcursorbmp(GUIVOL &v,const char *filename)
     int r,g,bl;
     BMPPIX(x,y,r,g,bl);
     if (r==tr && g==tg && bl==tb) {d[y*w+x]=(char)TRANSPARENT; continue;}
-    if (!hot) {hot=1; cursorhotx=x; cursorhoty=y;}
+    hot=1;
     //nearest GUI color (not the NES colors, 224-255); the palette is 6-bit here
     int best=0,bestd=0x7FFFFFFF;
     for (int i=0; i<224; i++)
@@ -381,5 +383,228 @@ int loadcursorbmp(GUIVOL &v,const char *filename)
  free(b);
  if (!hot) {free(s); return 0;}
  v.cursor=s->compress((char)TRANSPARENT);
+ guinumcursorframes=0; //(not GUI.VOL's animation: it's another hand)
  return 1;
+}
+
+
+//----------------------------------------------------------------
+//GUI data from a NESticle GUI volume, by name: a GUI.VOL, or an original
+//NESTICLE.EXE (which has its "gui" volume inside; copy it to GUI.VOL).
+//Each entry: "DSL\0", type (1 byte), size (4), name (9), then the data.
+//What isn't in it keeps the built-in version.
+
+IMG *guicursorframes[8];  //the bleeding animation (bc1..bc4), if any
+int guinumcursorframes=0;
+IMG *guimaxicon=0;        //maximize button
+IMG *guidiricon=0,*guidriveicon=0,*guinesicon=0; //Load ROM list
+
+//case-insensitive compare of n chars (portable)
+static int namecmp(const char *a,const char *b,int n)
+{
+ for (int i=0; i<n; i++)
+  {
+   int x=tolower((unsigned char)a[i]),y=tolower((unsigned char)b[i]);
+   if (x!=y) return x-y;
+   if (!x) return 0;
+  }
+ return 0;
+}
+
+static unsigned rdle32(const unsigned char *p) {return p[0]|(p[1]<<8)|(p[2]<<16)|((unsigned)p[3]<<24);}
+
+int guivol_loadnamed(GUIVOL &v,const char *filename)
+{
+ FILE *f=fopen(filename,"rb");
+ if (!f) return 0;
+ fseek(f,0,SEEK_END);
+ long len=ftell(f);
+ fseek(f,0,SEEK_SET);
+ if (len<18 || len>4000000) {fclose(f); return 0;}
+ unsigned char *d=(unsigned char *)malloc(len);
+ if (fread(d,1,len,f)!=(size_t)len) {fclose(f); free(d); return 0;}
+ fclose(f);
+
+ //find the volume header: "DSL\0", type 0, size 0, name "gui"
+ long o=-1;
+ for (long i=0; i+18<=len; i++)
+  if (d[i]=='D' && d[i+1]=='S' && d[i+2]=='L' && d[i+3]==0 && d[i+4]==0 &&
+      !rdle32(d+i+5) && !namecmp((char *)d+i+9,"gui",4)) {o=i+18; break;}
+ if (o<0) {free(d); return 0;}
+
+ int n=0;
+ IMG *bc[4]={0,0,0,0};
+ while (o+18<=len && d[o]=='D' && d[o+1]=='S' && d[o+2]=='L' && d[o+3]==0)
+  {
+   unsigned size=rdle32(d+o+5);
+   char name[10];
+   memcpy(name,d+o+9,9); name[9]=0;
+   o+=18;
+   if (o+(long)size>len) break;
+   void *t=malloc(size ? size : 1);
+   memcpy(t,d+o,size);
+   o+=size;
+   n++;
+
+   #define IS(s) (!namecmp(name,s,10))
+   if (IS("bg.lbm") && size==768) v.pal=(PALETTE *)realloc(t,sizeof(PALETTE));
+   else if (IS("cursor.r2")) v.cursor=(IMG *)t;
+   else if (IS("font.fnt")) v.font=(FONT *)t;
+   else if (IS("check.r2")) v.checkmark=(IMG *)t;
+   else if (IS("umark.r2")) v.umark=(IMG *)t;
+   else if (IS("dmark.r2")) v.dmark=(IMG *)t;
+   else if (IS("lmark.r2")) v.lmark=(IMG *)t;
+   else if (IS("rmark.r2")) v.rmark=(IMG *)t;
+   else if (IS("wx.r2")) v.xmark=(IMG *)t;
+   else if (IS("wm.r2")) guimaxicon=(IMG *)t;
+   else if (IS("shitman.r") || IS("about.r2") || IS("buddy.r2")) v.about=(IMG *)t;
+   else if (IS("dir.r2")) guidiricon=(IMG *)t;
+   else if (IS("drive.r2")) guidriveicon=(IMG *)t;
+   else if (IS("nes.r2")) guinesicon=(IMG *)t;
+   else if (IS("bc1.r2")) bc[0]=(IMG *)t;
+   else if (IS("bc2.r2")) bc[1]=(IMG *)t;
+   else if (IS("bc3.r2")) bc[2]=(IMG *)t;
+   else if (IS("bc4.r2")) bc[3]=(IMG *)t;
+   else free(t);
+   #undef IS
+  }
+ free(d);
+
+ //the hand, then it bleeds
+ guinumcursorframes=0;
+ if (bc[0])
+  {
+   guicursorframes[guinumcursorframes++]=v.cursor;
+   for (int i=0; i<4; i++) if (bc[i]) guicursorframes[guinumcursorframes++]=bc[i];
+  }
+ return n;
+}
+
+//----------------------------------------------------------------
+//drawing the cursor
+//The hot spot of a cursor image is its topmost (then leftmost) pixel: the
+//fingertip. Animation frames are lined up by it.
+//With the bleeding frames from GUI.VOL: the hand, then the four frames.
+//Without them, the cursor bleeds anyway: drops gather under the lowest
+//blood pixel (any red: colors 0x20-0x2F), fall and vanish.
+
+extern volatile unsigned uu; //60 Hz ticks
+extern "C" int PITCH,SCREENX,SCREENY;
+
+//decode an IMG into pix (128x128, 0 = transparent)
+static int decodeimg(IMG *img,unsigned char *pix)
+{
+ if (!img || img->xw>128 || img->yw>128) return 0;
+ memset(pix,0,128*128);
+ int *yd=img->ydisp();
+ for (int j=0; j<img->yw; j++)
+  {
+   unsigned char *src=((unsigned char *)img)+yd[j];
+   int px=0;
+   while (px<img->xw)
+    {
+     px+=*src++;
+     if (px>=img->xw) break;
+     int run=*src++;
+     for (int k=0; k<run && px<img->xw; k++,px++) pix[j*128+px]=src[k] ? src[k] : 1;
+     src+=run;
+    }
+  }
+ return 1;
+}
+
+static void hotspot(IMG *img,int &hx,int &hy)
+{
+ static IMG *last=0;
+ static int lx=0,ly=0;
+ if (img!=last)
+  {
+   static unsigned char pix[128*128];
+   last=img; lx=ly=0;
+   if (decodeimg(img,pix))
+    for (int j=0,found=0; j<img->yw && !found; j++)
+     for (int i=0; i<img->xw; i++)
+      if (pix[j*128+i]) {lx=i; ly=j; found=1; break;}
+  }
+ hx=lx; hy=ly;
+}
+
+static IMG *bloodof=0;  //cursor the drip point was found for
+static int bloodx=-1,bloody=0;
+
+static int isblood(unsigned char c) {return (c&0xF0)==0x20;}
+
+static void findblood(IMG *img)
+{
+ static unsigned char pix[128*128];
+ bloodof=img;
+ bloodx=-1;
+ if (!decodeimg(img,pix)) return;
+ //the lowest blood pixel with blood above it (the bottom of the wound,
+ //not a drop already falling); else the lowest blood pixel
+ int fx=-1,fy=0;
+ for (int j=img->yw-1; j>=1 && bloodx<0; j--)
+  for (int i=0; i<img->xw; i++)
+   if (isblood(pix[j*128+i]))
+    {
+     if (fx<0) {fx=i; fy=j;}
+     if (isblood(pix[(j-1)*128+i])) {bloodx=i; bloody=j; break;}
+    }
+ if (bloodx<0 && fx>=0) {bloodx=fx; bloody=fy;}
+}
+
+static void bloodpixel(char *dest,int x,int y,int c)
+{
+ if (x>=0 && y>=0 && x<SCREENX && y<SCREENY) dest[y*PITCH+x]=(char)c;
+}
+
+static void drawdrops(char *dest,int x,int y)
+{
+ if (bloodof!=guivol.cursor) findblood(guivol.cursor);
+ if (bloodx<0) return;
+ int bx=x+bloodx,by=y+bloody;
+
+ //two drops, out of step, with different periods
+ for (int d=0; d<2; d++)
+  {
+   int period=d ? 97 : 71;
+   int t=(int)((uu+d*40)%period);
+   int ox=d ? ((bloodx>0) ? -1 : 1) : 0; //the second one a pixel over
+   if (d && !(((uu+d*40)/period)&1)) continue; //every other time
+   if (t<24)
+    {
+     //gathering
+     bloodpixel(dest,bx+ox,by+1,0x24);
+     if (t>=12) bloodpixel(dest,bx+ox,by+2,0x21);
+    }
+   else if (t<52)
+    {
+     //falling
+     int f=t-24;
+     int dy=2+f*f/28;
+     bloodpixel(dest,bx+ox,by+dy-1,0x24);
+     bloodpixel(dest,bx+ox,by+dy,0x21);
+     bloodpixel(dest,bx+ox,by+dy+1,0x22);
+    }
+  }
+}
+
+//draw the mouse cursor with its hot spot at x,y
+void drawcursor(char *dest,int x,int y)
+{
+ IMG *img=guivol.cursor;
+ int animated=guinumcursorframes>1;
+ if (animated)
+  {
+   //the hand for a while, then the four bleeding frames
+   int t=(int)(uu%(40+8*(guinumcursorframes-1)));
+   int fr=(t<40) ? 0 : 1+(t-40)/8;
+   if (fr>=guinumcursorframes) fr=guinumcursorframes-1;
+   img=guicursorframes[fr];
+  }
+ if (!img) return;
+ int hx,hy;
+ hotspot(img,hx,hy);
+ img->draw(dest,x-hx,y-hy);
+ if (!animated) drawdrops(dest,x-hx,y-hy);
 }

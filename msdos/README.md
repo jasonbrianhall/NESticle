@@ -43,16 +43,21 @@ the BLASTER variable set (e.g. SET BLASTER=A220 I7 D1 H5 T6); -nosound to
 turn it off. A mouse driver for the GUI. Optional gameport joystick.
 
 ROMs (.NES) can be anywhere: File > Load ROM browses folders ([NAME] opens a
-folder, [..] goes up). Long file names work where DOS has them (Windows 9x,
+folder, [..] goes up); double-click a ROM (or Load) to start it. Long file names work where DOS has them (Windows 9x,
 DOSLFN; SET LFN=N turns them off). Battery saves (.SAV), snapshots (.PCX) and
 save states go next to the ROM; NESticle.cfg in the folder you start from.
 
 GUI art: the original GUI.VOL isn't in the source release, so NESticle makes
-its own palette, font and icons (and a bleeding hand cursor). If you have
-the original GUI.VOL, put it next to NESTICLE.EXE and it's used instead. For
-just the mouse cursor, put a CURSOR.BMP there: actual size (up to 64x64),
-1/4/8/24/32-bit uncompressed; its top left pixel's color is transparent, and
-the topmost pixel (the fingertip) is the hot spot.
+its own palette, font and icons, and a bleeding hand cursor. For the
+original art, put a GUI.VOL next to NESTICLE.EXE: either a real one, or
+simply a copy of an original NESticle NESTICLE.EXE renamed GUI.VOL (the
+GUI volume is inside it). Then you get the original palette, font, icons,
+Buddy, and the hand cursor with its bleeding animation. (make dist copies
+a GUI.VOL from this folder, if there is one.)
+
+For just a different mouse cursor, put a CURSOR.BMP there: actual size (up
+to 64x64), 1/4/8/24/32-bit uncompressed; its top left pixel's color is
+transparent, its topmost pixel (the fingertip) is the hot spot.
 
 The video mode: by default the 8-bit mode that fits the desktop best (VESA
 320x240 for the default 320x240 desktop); to choose, set NESTICLE_VIDEO

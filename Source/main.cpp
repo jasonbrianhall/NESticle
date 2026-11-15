@@ -136,8 +136,14 @@ int initgame()
 
  //load up graphics and shit
  //(GUI.VOL isn't in the source release: without it, make our own set)
+ //(GUI.VOL isn't in the source release: make our own set, then take
+ //what's there from GUI.VOL, by name; an original NESTICLE.EXE copied to
+ //GUI.VOL works too, it has the volume inside)
  int guivol_generate(GUIVOL &v);
- if (!guivol.read("gui.vol") && !guivol_generate(guivol)) return -1;
+ int guivol_loadnamed(GUIVOL &v,const char *filename);
+ if (!guivol_generate(guivol)) return -1;
+ int nvol=guivol_loadnamed(guivol,"gui.vol");
+ if (nvol) msg.printf(2,"GUI.VOL: %d items",nvol);
  //your own mouse cursor
  int loadcursorbmp(GUIVOL &v,const char *filename);
  if (loadcursorbmp(guivol,"cursor.bmp")) msg.printf(2,"Mouse cursor from CURSOR.BMP");

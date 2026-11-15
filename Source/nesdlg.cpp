@@ -212,7 +212,13 @@ class loaddlg:public GUIcontents
        return 0;
       }
      joinpath(full,loaddir,s);
-     loadrom(full);
+     //load and run it (like -run), and close the dialog
+     int dblclick=(guimsg==GUIMSG_LISTBOXDBLCLICKED);
+     if (dblclick) delete parent; //(deletes us: only locals from here on)
+     int cmd_runrom(char *p);
+     cmd_runrom(full);
+     if (!nv) {void m_showmessages(); m_showmessages(); enablegui();} //(it says why)
+     return !dblclick;
      #else
      loadrom(s);
      #endif

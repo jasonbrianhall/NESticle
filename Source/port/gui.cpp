@@ -487,7 +487,8 @@ GUImaximizebox::GUImaximizebox(GUIrect *p,char *titlestr,GUIcontents *c,int x,in
  :GUIbox(p,titlestr,c,x,y)
 {
  maximized=0;
- max=new GUIimagebutton(this,guivol.umark,0,0);
+ extern IMG *guimaxicon; //(GUI.VOL's, if there is one)
+ max=new GUIimagebutton(this,guimaxicon ? guimaxicon : guivol.umark,0,0);
  max->resize(10,9);
  reposmaxbutton();
 }
@@ -893,7 +894,7 @@ GUIrect *GUIlistbox::click(mouse &mm)
    return 0;
   }
  setsel(i);
- dblclick.set(20);
+ dblclick.set(30);
  depressed=1;
  return this;
 }
@@ -963,6 +964,26 @@ void GUIstringlistbox::drawitems(char *dest,int x,int y)
    int idx=first+i;
    if (idx==sel) drawrect(dest,focus ? CLR_MENUSEL : CLR_BUTTONINNERDOWN,x,y+i*itemheight,SCREENX,itemheight);
    char *s=(char *)items[idx];
-   if (s) font[idx==sel ? FNT_MENUSEL : FNT_EDITINPUT]->draw(s,dest,x+2,y+i*itemheight+(itemheight-8)/2);
+   if (!s) continue;
+   //folders and ROMs get GUI.VOL's icons, if there are any
+   extern IMG *guidiricon,*guinesicon;
+   int iy=y+i*itemheight;
+   int fn=idx==sel ? FNT_MENUSEL : FNT_EDITINPUT;
+   int n=strlen(s);
+   if (guidiricon && n>=2 && s[0]=='[' && s[n-1]==']')
+    {
+     char t[300];
+     strncpy(t,s+1,n-2); t[n-2]=0;
+     guidiricon->draw(dest,x+2,iy+(itemheight-guidiricon->yw)/2);
+     font[fn]->draw(t,dest,x+15,iy+(itemheight-8)/2);
+     continue;
+    }
+   if (guinesicon && n>4 && s[n-4]=='.' && tolower((unsigned char)s[n-3])=='n' && tolower((unsigned char)s[n-2])=='e' && tolower((unsigned char)s[n-1])=='s')
+    {
+     guinesicon->draw(dest,x+2,iy+(itemheight-guinesicon->yw)/2);
+     font[fn]->draw(s,dest,x+15,iy+(itemheight-8)/2);
+     continue;
+    }
+   font[fn]->draw(s,dest,x+2,iy+(itemheight-8)/2);
   }
 }

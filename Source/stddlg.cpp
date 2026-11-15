@@ -86,15 +86,20 @@ extern char appname[];
 extern char buildtime[],builddate[],buildcompiler[];
 extern int buildcompilerversionhigh,buildcompilerversionlow;
 extern float version; //game version
+//room for the picture (the one in GUI.VOL can be bigger than the box was made for)
+static int abouttx() {return (guivol.about && guivol.about->xw+12>70) ? guivol.about->xw+12 : 70;}
+static int aboutyw() {return (guivol.about && guivol.about->yw+10>65) ? guivol.about->yw+10 : 65;}
+
 class aboutdlg:public GUIcontents
 {
  public:
- aboutdlg():GUIcontents(290,65)
+ aboutdlg():GUIcontents(290+abouttx()-70,aboutyw())
  {
   char s[80];
+  int tx=abouttx();
 
   new GUIstaticimage(this,guivol.about,5,5);
-  new GUIstatictext(this,2,"Buddy says:",70,5);
+  new GUIstatictext(this,2,"Buddy says:",tx,5);
 
   sprintf(s,"%s %s",appname,
     #ifdef WIN95
@@ -104,14 +109,14 @@ class aboutdlg:public GUIcontents
     #endif
     );
 
-  new GUIstatictext(this,3,s,70,20);
+  new GUIstatictext(this,3,s,tx,20);
 
   sprintf(s,"V%d.%02d",(unsigned)version,((unsigned)(version*100))%100);
-  new GUIstatictext(this,5,s,250,20);
+  new GUIstatictext(this,5,s,tx+180,20);
 
-  new GUIstatictext(this,3,"Copyright (C) 1997 Bloodlust Software",70,50);
+  new GUIstatictext(this,3,"Copyright (C) 1997 Bloodlust Software",tx,50);
   sprintf(s,"%s %d.%d %s %s",buildcompiler,buildcompilerversionhigh,buildcompilerversionlow,builddate,buildtime);
-  new GUIstatictext(this,3,s,70,30);
+  new GUIstatictext(this,3,s,tx,30);
  }
 
  virtual int sendmessage(GUIrect *c,int guimsg) {return 1;};
