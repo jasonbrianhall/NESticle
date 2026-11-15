@@ -57,6 +57,25 @@ endif
 
 all: msdos_embedded
 
+# SDL3, sdl3-config and cwsdpmi are the same as in SDLPoPDOS/msdos: if they
+# aren't here, get them from there first (on the host, before any Docker
+# run, and before the SDL3 file list below is read).
+SDLPOPDOS_REPO = https://github.com/jasonbrianhall/SDLPoPDOS
+ifeq ($(filter clean distclean,$(MAKECMDGOALS)),)
+NEED_DEPS := $(if $(and $(wildcard SDL3/include/SDL3/SDL.h),$(wildcard sdl3-config/build_config),$(wildcard cwsdpmi/bin/CWSDSTUB.EXE)),,1)
+ifeq ($(NEED_DEPS),1)
+$(info Getting SDL3, sdl3-config and cwsdpmi from $(SDLPOPDOS_REPO) ...)
+DEPS_RESULT := $(shell rm -rf $(BUILD)/SDLPoPDOS && mkdir -p $(BUILD) && \
+  git clone -q --depth 1 $(SDLPOPDOS_REPO) $(BUILD)/SDLPoPDOS && \
+  rm -rf SDL3 sdl3-config cwsdpmi && \
+  cp -r $(BUILD)/SDLPoPDOS/msdos/SDL3 $(BUILD)/SDLPoPDOS/msdos/sdl3-config $(BUILD)/SDLPoPDOS/msdos/cwsdpmi . && \
+  rm -rf $(BUILD)/SDLPoPDOS && echo ok)
+ifneq ($(DEPS_RESULT),ok)
+$(error Couldn't get them; copy SDL3, sdl3-config and cwsdpmi from SDLPoPDOS/msdos into this folder)
+endif
+endif
+endif
+
 # ---------------------------------------------------------------- SDL3
 SDL_CFLAGS = -O2 -DNDEBUG -fno-strict-aliasing -w \
              -DSDL_BUILD_MAJOR_VERSION=3 -DSDL_BUILD_MINOR_VERSION=5 -DSDL_BUILD_MICRO_VERSION=0 \

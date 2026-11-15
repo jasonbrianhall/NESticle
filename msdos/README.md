@@ -22,9 +22,10 @@ Building
 
 Needs a DJGPP cross compiler on the PATH (i586-pc-msdosdjgpp-gcc and -g++;
 prebuilt: https://github.com/andrewwutw/build-djgpp/releases), or Docker,
-which uses the djfdyuruiry/djgpp image. SDL3 (with its DOS port) and CWSDPMI
-are in this folder, as in SDLPoPDOS; SDL3 is compiled into build/libSDL3.a
-the first time.
+which uses the djfdyuruiry/djgpp image (and git, on the host). SDL3 (with its
+DOS port), sdl3-config and CWSDPMI are the same as in SDLPoPDOS/msdos; if
+they aren't in this folder, make clones SDLPoPDOS and copies them in first.
+SDL3 is compiled into build/libSDL3.a the first time.
 
 
 Running it
