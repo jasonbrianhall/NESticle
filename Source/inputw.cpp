@@ -244,6 +244,8 @@ class changeinputdevice:public GUIcontents
 
  void changedevice(int type)
  {
+  //Redefine keys edits this device's keys: close it first
+  if (redefinekeys::pos.opened) delete redefinekeys::pos.opened;
   disable();
   if (in) delete in;
   in=newinputdevice(type);
@@ -254,10 +256,14 @@ class changeinputdevice:public GUIcontents
  virtual ~changeinputdevice()
   {
    pos.close((GUIbox *)parent);
+   //keep what was set up (the original went back to the saved settings
+   //unless you pressed Save settings, so redefined keys were lost)
+   if (redefinekeys::pos.opened) delete redefinekeys::pos.opened;
    if (in)
     {
-     changedevice(lastintype); //reset input device from last settings
-//     in->bind(lasto);
+     in->savesettings();
+     cfg->pinput[inputnum]=in->type;
+     cfg->save(configfile);
     }
   }
 
