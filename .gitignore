@@ -37,3 +37,7 @@
 /windows/build/
 /windows/nesticle.exe
 /windows/SDL3.dll
+/msdos/SDL3/
+/msdos/sdl3-config/
+/msdos/cwsdpmi/
+/build/

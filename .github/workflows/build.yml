@@ -1,4 +1,5 @@
-# Builds NESticle for MS-DOS, Windows and Linux, and packages each one.
+# Builds NESticle for MS-DOS (DJGPP), Windows (MSVC x64/arm64, and an MSI)
+# and Linux, and packages each one.
 # Every push and pull request: the packages are workflow artifacts.
 # A tag v*: they're also attached to a GitHub release.
 name: Build
@@ -9,6 +10,10 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+
+env:
+  PRODUCT_VERSION: "0.2.${{ github.run_number }}"
+  UPGRADE_CODE: "5F2D8A61-3C7E-4B19-A84D-6E0B9C27F153"
 
 jobs:
   dos:
@@ -32,21 +37,182 @@ jobs:
           path: NESticle-DOS.zip
 
   windows:
-    name: Windows (MinGW-w64)
-    runs-on: ubuntu-24.04
+    # Same toolchain as felixterminal: Microsoft C (CMake), SDL3 from vcpkg
+    name: Windows ${{ matrix.name }} (MSVC)
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x64
+            cmake_arch: x64
+            triplet: x64-windows
+          - name: arm64
+            cmake_arch: ARM64
+            triplet: arm64-windows
     steps:
       - uses: actions/checkout@v4
-      - name: Install MinGW-w64
-        run: sudo apt-get update && sudo apt-get install -y g++-mingw-w64-x86-64 zip
+
+      - name: Bootstrap vcpkg
+        run: |
+          git clone --branch 2026.07.29 --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg-nes
+          C:\vcpkg-nes\bootstrap-vcpkg.bat
+          echo "VCPKG_ROOT=C:\vcpkg-nes" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "VCPKG_BINARY_SOURCES=clear;files,C:\vcpkg_bincache,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          New-Item -ItemType Directory -Force -Path C:\vcpkg_bincache | Out-Null
+
+      - name: Restore vcpkg binary cache
+        uses: actions/cache/restore@v4
+        with:
+          path: C:\vcpkg_bincache
+          key: vcpkg-bincache-${{ matrix.triplet }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-bincache-${{ matrix.triplet }}-
+
+      - name: Install Dependencies (vcpkg)
+        run: C:\vcpkg-nes\vcpkg.exe install --triplet ${{ matrix.triplet }} --x-install-root=C:\vcpkg-nes\installed
+
+      - name: Save vcpkg binary cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: C:\vcpkg_bincache
+          key: vcpkg-bincache-${{ matrix.triplet }}-${{ hashFiles('vcpkg.json') }}
+
+      - name: Configure (CMake, MSVC)
+        run: cmake -S . -B build -A ${{ matrix.cmake_arch }} -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg-nes\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} -DVCPKG_INSTALLED_DIR=C:\vcpkg-nes\installed -DCMAKE_BUILD_TYPE=Release
+
       - name: Build
-        working-directory: windows
-        run: make -j$(nproc) && make dist
+        run: cmake --build build --config Release --parallel
+
       - name: Package
-        run: cd windows/build/dist && zip -r ../../../NESticle-Windows.zip NESticle
+        working-directory: build\Release
+        run: |
+          if (-not (Test-Path "nesticle.exe")) { Write-Error "nesticle.exe not found"; exit 1 }
+          Copy-Item "C:\vcpkg-nes\installed\${{ matrix.triplet }}\bin\*.dll" . -ErrorAction SilentlyContinue
+          Copy-Item ..\..\windows\README.md README.txt
+          Copy-Item ..\..\msdos\GUI.VOL . -ErrorAction SilentlyContinue
+          Get-ChildItem | Format-Table Name, Length
+          Compress-Archive -Path nesticle.exe, *.dll, README.txt, GUI.VOL -DestinationPath ..\..\NESticle-Windows-${{ matrix.name }}.zip -Force
+
       - uses: actions/upload-artifact@v4
         with:
-          name: NESticle-Windows
-          path: NESticle-Windows.zip
+          name: NESticle-Windows-${{ matrix.name }}
+          path: NESticle-Windows-${{ matrix.name }}.zip
+
+  windows-msi:
+    # WiX v3 has no ARM64 target, so the MSI is x64 only (as in felixterminal)
+    name: Windows MSI (x64)
+    needs: windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: NESticle-Windows-x64
+          path: .
+
+      - name: Extract build
+        run: Expand-Archive -Path NESticle-Windows-x64.zip -DestinationPath msi -Force
+
+      - name: Setup WiX Toolset
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip" -OutFile wix.zip
+          Expand-Archive -Path wix.zip -DestinationPath wix
+          echo "$env:GITHUB_WORKSPACE\wix" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Generate MSI
+        working-directory: msi
+        run: |
+          $version = "${{ env.PRODUCT_VERSION }}"
+          $upgradeCode = "${{ env.UPGRADE_CODE }}"
+          Copy-Item ..\windows\nesticle.ico .
+          $files = Get-ChildItem -File | Where-Object { $_.Name -ne "nesticle.exe" -and $_.Name -ne "nesticle.ico" } | ForEach-Object {
+            $id = "f_" + ($_.Name -replace '[^a-zA-Z0-9]', '_')
+            "          <File Id=`"$id`" Name=`"$($_.Name)`" Source=`"$($_.Name)`" />"
+          }
+          @"
+          <?xml version="1.0" encoding="UTF-8"?>
+          <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+            <Product Id="*" Name="NESticle" Language="1033" Version="$version"
+                     Manufacturer="Bloodlust Software" UpgradeCode="$upgradeCode">
+              <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine"
+                       Description="NESticle - NES emulator" Manufacturer="Bloodlust Software" />
+              <MajorUpgrade DowngradeErrorMessage="A newer version of NESticle is already installed."
+                            Schedule="afterInstallInitialize" />
+              <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+              <Icon Id="NesticleIcon" SourceFile="nesticle.ico" />
+              <Property Id="ARPPRODUCTICON" Value="NesticleIcon" />
+              <Property Id="ARPURLINFOABOUT" Value="https://github.com/jasonbrianhall/NESticle" />
+              <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+              <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+              <Directory Id="TARGETDIR" Name="SourceDir">
+                <Directory Id="ProgramFiles64Folder">
+                  <Directory Id="INSTALLFOLDER" Name="NESticle" />
+                </Directory>
+                <Directory Id="ProgramMenuFolder">
+                  <Directory Id="ApplicationProgramsFolder" Name="NESticle" />
+                </Directory>
+                <Directory Id="DesktopFolder" />
+              </Directory>
+
+              <DirectoryRef Id="INSTALLFOLDER">
+                <Component Id="MainExecutable" Guid="8E1C2B7A-5D34-4F0B-9C61-2A7D3E9F4B15" Win64="yes">
+                  <File Id="nesticle_exe" Name="nesticle.exe" Source="nesticle.exe" KeyPath="yes" />
+          $($files -join "`r`n")
+                </Component>
+              </DirectoryRef>
+
+              <DirectoryRef Id="ApplicationProgramsFolder">
+                <Component Id="StartMenuShortcut" Guid="3B6F0D29-7A41-4E8C-B5D2-91C4E7A0F36B" Win64="yes">
+                  <Shortcut Id="StartMenuNesticle" Name="NESticle" Description="NESticle NES emulator"
+                            Target="[INSTALLFOLDER]nesticle.exe" WorkingDirectory="INSTALLFOLDER" Icon="NesticleIcon" />
+                  <RemoveFolder Id="ApplicationProgramsFolderRemove" On="uninstall" />
+                  <RegistryValue Root="HKCU" Key="Software\NESticle" Name="startmenu" Type="integer" Value="1" KeyPath="yes" />
+                </Component>
+              </DirectoryRef>
+
+              <DirectoryRef Id="DesktopFolder">
+                <Component Id="DesktopShortcut" Guid="C7A94E15-2F6B-4D83-A0E9-5B1D8C3F72A4" Win64="yes">
+                  <Shortcut Id="DesktopNesticle" Name="NESticle" Description="NESticle NES emulator"
+                            Target="[INSTALLFOLDER]nesticle.exe" WorkingDirectory="INSTALLFOLDER" Icon="NesticleIcon" />
+                  <RegistryValue Root="HKCU" Key="Software\NESticle" Name="desktop" Type="integer" Value="1" KeyPath="yes" />
+                </Component>
+              </DirectoryRef>
+
+              <Feature Id="MainFeature" Title="NESticle" Level="1">
+                <ComponentRef Id="MainExecutable" />
+                <ComponentRef Id="StartMenuShortcut" />
+                <ComponentRef Id="DesktopShortcut" />
+              </Feature>
+
+              <UIRef Id="WixUI_InstallDir" />
+              <UIRef Id="WixUI_ErrorProgressText" />
+            </Product>
+          </Wix>
+          "@ | Out-File -FilePath nesticle.wxs -Encoding UTF8
+
+          @"
+          {\rtf1\ansi\deff0 {\fonttbl {\f0 Arial;}}\f0\fs20
+          NESticle (c) 1997-1998 Bloodlust Software. Source code released by its
+          community; this port (DOS/SDL3, the rewritten GUI and 6502 core, Linux and
+          Windows builds) is in https://github.com/jasonbrianhall/NESticle .\par
+          }
+          "@ | Out-File -FilePath License.rtf -Encoding ASCII
+
+          & candle.exe -out nesticle.wixobj -arch x64 nesticle.wxs
+          if ($LASTEXITCODE -ne 0) { Write-Error "candle failed"; exit 1 }
+          & light.exe -out NESticle.msi -ext WixUIExtension -ext WixUtilExtension nesticle.wixobj
+          if ($LASTEXITCODE -ne 0) { Write-Error "light failed"; exit 1 }
+          Get-Item NESticle.msi | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NESticle-MSI
+          path: msi/NESticle.msi
 
   linux:
     name: Linux (SDL3)
@@ -77,7 +243,7 @@ jobs:
   release:
     name: Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [dos, windows, linux]
+    needs: [dos, windows, windows-msi, linux]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -89,5 +255,7 @@ jobs:
         with:
           files: |
             NESticle-DOS.zip
-            NESticle-Windows.zip
+            NESticle-Windows-x64.zip
+            NESticle-Windows-arm64.zip
+            NESticle.msi
             NESticle-Linux-x86_64.tar.gz

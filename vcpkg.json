@@ -1,0 +1,7 @@
+{
+  "name": "nesticle",
+  "version-string": "0.2.0",
+  "dependencies": [
+    "sdl3"
+  ]
+}

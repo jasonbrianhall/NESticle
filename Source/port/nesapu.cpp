@@ -120,31 +120,40 @@ struct Pulse
     sweepValue=sweepPeriod;
    }
  }
+ //the period the sweep is heading for (can be past 0x7FF, or negative)
+ int sweepTargetPeriod()
+ {
+  int delta=timerPeriod>>sweepShift;
+  if (!sweepNegate) return timerPeriod+delta;
+  return timerPeriod-delta-(channel==1 ? 1 : 0);
+ }
+ //as the hardware: a target past 0x7FF mutes the channel and the period
+ //stays (it used to wrap around: see run())
  void sweepTarget()
  {
   if (!sweepShift) return;
-  int delta=timerPeriod>>sweepShift;
-  if (sweepNegate)
-   {
-    timerPeriod-=delta;
-    if (channel==1) timerPeriod--;
-   }
-  else timerPeriod+=delta;
+  int t=sweepTargetPeriod();
+  if (t>0x7FF || t<0) return;
+  timerPeriod=(unsigned short)t;
  }
  void stepLength() {if (lengthEnabled && lengthValue>0) lengthValue--;}
 
  //advance by c cpu cycles (16.16)
+ //(64-bit step: a period of 0xFFFF made a 32-bit one 0, and this loop
+ //never ended: the program froze, in Super Mario Bros 1-2 for one)
  void run(unsigned c)
  {
-  unsigned step=((unsigned)timerPeriod+1)*2<<16;
-  phase+=c;
-  while (phase>=step) {phase-=step; dutyValue=(dutyValue+1)&7;}
+  unsigned long long step=(((unsigned long long)(timerPeriod&0x7FF))+1)*2<<16;
+  unsigned long long ph=(unsigned long long)phase+c;
+  if (ph>=step) {dutyValue=(dutyValue+(unsigned)(ph/step))&7; ph%=step;}
+  phase=(unsigned)ph;
  }
  unsigned char output()
  {
   if (!enabled || lengthValue==0) return 0;
   if (dutyTable[dutyMode][dutyValue]==0) return 0;
   if (timerPeriod<8 || timerPeriod>0x7FF) return 0;
+  if (!sweepNegate && sweepShift && sweepTargetPeriod()>0x7FF) return 0; //muted by the sweep
   return env.out();
  }
 };
@@ -173,14 +182,15 @@ struct Triangle
  }
  void run(unsigned c)
  {
-  unsigned step=((unsigned)timerPeriod+1)<<16;
   if (timerPeriod<2) return; //ultrasonic: hold (avoids popping)
-  phase+=c;
-  while (phase>=step)
+  unsigned long long step=((unsigned long long)(timerPeriod&0x7FF)+1)<<16;
+  unsigned long long ph=(unsigned long long)phase+c;
+  if (ph>=step)
    {
-    phase-=step;
-    if (lengthValue>0 && counterValue>0) dutyValue=(dutyValue+1)&31;
+    if (lengthValue>0 && counterValue>0) dutyValue=(dutyValue+(unsigned)(ph/step))&31;
+    ph%=step;
    }
+  phase=(unsigned)ph;
  }
  void stepLength() {if (lengthEnabled && lengthValue>0) lengthValue--;}
  void stepCounter()
@@ -223,9 +233,9 @@ struct Noise
  }
  void run(unsigned c)
  {
-  unsigned step=(unsigned)timerPeriod<<16;
+  unsigned step=(unsigned)(timerPeriod ? timerPeriod : 1)<<16;
   phase+=c;
-  while (phase>=step)
+  while (phase>=step) //(at most ~20 times: the shortest period is 4)
    {
     phase-=step;
     int shift=mode ? 6 : 1;
