@@ -55,9 +55,9 @@ jobs:
 
       - name: Bootstrap vcpkg
         run: |
-          git clone --branch 2026.07.29 --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
-          C:\vcpkg\bootstrap-vcpkg.bat
-          echo "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          git clone --branch 2026.07.29 --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg-nes
+          C:\vcpkg-nes\bootstrap-vcpkg.bat
+          echo "VCPKG_ROOT=C:\vcpkg-nes" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "VCPKG_BINARY_SOURCES=clear;files,C:\vcpkg_bincache,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           New-Item -ItemType Directory -Force -Path C:\vcpkg_bincache | Out-Null
 
@@ -70,7 +70,7 @@ jobs:
             vcpkg-bincache-${{ matrix.triplet }}-
 
       - name: Install Dependencies (vcpkg)
-        run: C:\vcpkg\vcpkg.exe install --triplet ${{ matrix.triplet }} --x-install-root=C:\vcpkg\installed
+        run: C:\vcpkg-nes\vcpkg.exe install --triplet ${{ matrix.triplet }} --x-install-root=C:\vcpkg-nes\installed
 
       - name: Save vcpkg binary cache
         if: always()
@@ -80,7 +80,7 @@ jobs:
           key: vcpkg-bincache-${{ matrix.triplet }}-${{ hashFiles('vcpkg.json') }}
 
       - name: Configure (CMake, MSVC)
-        run: cmake -S . -B build -A ${{ matrix.cmake_arch }} -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} -DVCPKG_INSTALLED_DIR=C:\vcpkg\installed -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -A ${{ matrix.cmake_arch }} -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg-nes\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} -DVCPKG_INSTALLED_DIR=C:\vcpkg-nes\installed -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: cmake --build build --config Release --parallel
@@ -89,7 +89,7 @@ jobs:
         working-directory: build\Release
         run: |
           if (-not (Test-Path "nesticle.exe")) { Write-Error "nesticle.exe not found"; exit 1 }
-          Copy-Item "C:\vcpkg\installed\${{ matrix.triplet }}\bin\*.dll" . -ErrorAction SilentlyContinue
+          Copy-Item "C:\vcpkg-nes\installed\${{ matrix.triplet }}\bin\*.dll" . -ErrorAction SilentlyContinue
           Copy-Item ..\..\windows\README.md README.txt
           Copy-Item ..\..\msdos\GUI.VOL . -ErrorAction SilentlyContinue
           Get-ChildItem | Format-Table Name, Length
