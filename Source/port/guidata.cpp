@@ -441,10 +441,22 @@ static int namecmp(const char *a,const char *b,int n)
 
 static unsigned rdle32(const unsigned char *p) {return p[0]|(p[1]<<8)|(p[2]<<16)|((unsigned)p[3]<<24);}
 
+//the original GUI.VOL built into the program, if it was there at build
+//time (guivolembed.cpp)
+extern "C" const unsigned char *nesticle_guivol_data();
+extern "C" long nesticle_guivol_size();
+
+static int guivol_loadmem(GUIVOL &v,const unsigned char *d,long len);
+
 int guivol_loadnamed(GUIVOL &v,const char *filename)
 {
  FILE *f=openguifile(filename);
- if (!f) return 0;
+ if (!f)
+  {
+   //no GUI.VOL around: the built-in copy
+   if (nesticle_guivol_size()>0) return guivol_loadmem(v,nesticle_guivol_data(),nesticle_guivol_size());
+   return 0;
+  }
  fseek(f,0,SEEK_END);
  long len=ftell(f);
  fseek(f,0,SEEK_SET);
@@ -452,13 +464,20 @@ int guivol_loadnamed(GUIVOL &v,const char *filename)
  unsigned char *d=(unsigned char *)malloc(len);
  if (fread(d,1,len,f)!=(size_t)len) {fclose(f); free(d); return 0;}
  fclose(f);
+ int n=guivol_loadmem(v,d,len);
+ free(d);
+ if (!n && nesticle_guivol_size()>0) return guivol_loadmem(v,nesticle_guivol_data(),nesticle_guivol_size());
+ return n;
+}
 
+static int guivol_loadmem(GUIVOL &v,const unsigned char *d,long len)
+{
  //find the volume header: "DSL\0", type 0, size 0, name "gui"
  long o=-1;
  for (long i=0; i+18<=len; i++)
   if (d[i]=='D' && d[i+1]=='S' && d[i+2]=='L' && d[i+3]==0 && d[i+4]==0 &&
       !rdle32(d+i+5) && !namecmp((char *)d+i+9,"gui",4)) {o=i+18; break;}
- if (o<0) {free(d); return 0;}
+ if (o<0) return 0;
 
  int n=0;
  IMG *bc[4]={0,0,0,0};
@@ -496,7 +515,6 @@ int guivol_loadnamed(GUIVOL &v,const char *filename)
    else free(t);
    #undef IS
   }
- free(d);
 
  //the hand, then it bleeds
  guinumcursorframes=0;

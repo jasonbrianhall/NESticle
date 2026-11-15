@@ -53,7 +53,7 @@ int filldirlistbox(char *filename,class GUIdirlistbox *b);
 
 int USERENTRY dirlistcmp(char **a,char **b) {return stricmp(*a,*b);}
 
-#ifdef __GNUC__
+#ifdef NESTICLE_DIRS
 //directories first ("[NAME]"), then files
 int USERENTRY dirlistcmp2(char **a,char **b)
 {
@@ -63,9 +63,13 @@ int USERENTRY dirlistcmp2(char **a,char **b)
 }
 
 //directory browsing (the original listed *.NES in the current directory only)
+#ifdef _MSC_VER
+#include "port/dirent_win.h"
+#else
 #include <dirent.h>
-#include <sys/stat.h>
 #include <unistd.h>
+#endif
+#include <sys/stat.h>
 #include <limits.h>
 
 //dir + "/" + name (no double slash after a root like c:/)
@@ -82,7 +86,7 @@ class GUIdirlistbox:public GUIstringlistbox
  public:
  void sortdirlist() //sort all entries in list
  {
-  #ifdef __GNUC__
+  #ifdef NESTICLE_DIRS
   qsort((void *)getitems(),getnumitems(),sizeof(char *),(qsortfuncptr)dirlistcmp2);
   #else
   qsort((void *)getitems(),getnumitems(),4,(qsortfuncptr)dirlistcmp);
@@ -100,7 +104,7 @@ class GUIdirlistbox:public GUIstringlistbox
  {
   strcpy(path,_path);    //set path
   freenames();
-  #ifdef __GNUC__
+  #ifdef NESTICLE_DIRS
   //_path is a directory: its subdirectories, then its .NES files
   DIR *d=opendir(path);
   if (d)
@@ -168,7 +172,7 @@ int filldirlistbox(char *filename,GUIdirlistbox *b)
 //----------------------
 //   load rom
 //----------------------
-#ifdef __GNUC__
+#ifdef NESTICLE_DIRS
 static char loaddir[PATH_MAX]=""; //last directory browsed
 #endif
 
@@ -177,7 +181,7 @@ class loaddlg:public GUIcontents
  GUIdirlistbox *list;
 
  public:
- #ifdef __GNUC__
+ #ifdef NESTICLE_DIRS
  loaddlg():GUIcontents(SCREENX>=320 ? 220 : 160,163) //(room for long file names)
  {
   if (!loaddir[0] && !getcwd(loaddir,sizeof(loaddir))) strcpy(loaddir,".");
@@ -199,7 +203,7 @@ class loaddlg:public GUIcontents
     {
      char *s=list->getselptr();
      if (!s) return 0;
-     #ifdef __GNUC__
+     #ifdef NESTICLE_DIRS
      char full[PATH_MAX+300];
      if (s[0]=='[')
       {
@@ -229,7 +233,7 @@ class loaddlg:public GUIcontents
  virtual void draw(char *dest)
   {
    fill(CLR_BOX);
-   #ifdef __GNUC__
+   #ifdef NESTICLE_DIRS
    //the directory (its end, if it's too long)
    char *d=loaddir;
    while (*d && font[3]->getwidth(d)>width()-10) d++;

@@ -114,7 +114,7 @@ int FILEIO::create(char *filename)
  #endif
 
  #ifdef DOS
- #ifdef __DJGPP__
+ #if defined(__DJGPP__) || defined(_WIN32)
  //binary: creat() would open it in text mode (_fmode)
  h=::open(filename,O_RDWR|O_CREAT|O_TRUNC|O_BINARY,S_IWRITE|S_IREAD);
  #else

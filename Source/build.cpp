@@ -25,6 +25,6 @@ int buildcompilerversionlow=__GNUC_MINOR__;
 
 #ifdef _MSC_VER
 char buildcompiler[]="MS VC++";
-int buildcompilerversionhigh=4;
-int buildcompilerversionlow=10;
+int buildcompilerversionhigh=_MSC_VER/100;
+int buildcompilerversionlow=_MSC_VER%100;
 #endif

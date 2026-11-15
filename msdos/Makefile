@@ -318,7 +318,7 @@ NES_SRCS = build.cpp command.cpp config.cpp cpu.cpp disasm.cpp file.cpp font.cpp
            inputw.cpp main.cpp message.cpp mmc.cpp mouse.cpp nes.cpp nesdlg.cpp nessound.cpp \
            nesvideo.cpp prof.cpp r2img.cpp rom.cpp slist.cpp snapshot.cpp stddlg.cpp vol.cpp
 # The missing pieces, rewritten (see ../Source/port/README.md)
-PORT_SRCS = m6502.cpp draw.cpp guirect.cpp gui.cpp guimenu.cpp nesapu.cpp guidata.cpp nespal.cpp
+PORT_SRCS = m6502.cpp draw.cpp guirect.cpp gui.cpp guimenu.cpp nesapu.cpp guidata.cpp nespal.cpp guivolembed.cpp
 # The DOS platform layer on SDL3
 PLAT_SRCS = sdlmain.cpp
 
@@ -326,6 +326,13 @@ OBJS = $(addprefix $(BUILD)/obj/,$(NES_SRCS:.cpp=.o)) \
        $(addprefix $(BUILD)/obj/port/,$(PORT_SRCS:.cpp=.o)) \
        $(addprefix $(BUILD)/obj/plat/,$(PLAT_SRCS:.cpp=.o))
 HDRS = $(wildcard $(SRC)/*.h) $(wildcard $(PORT)/*.h)
+
+# The original GUI.VOL, built into the program (port/guivolembed.cpp)
+GUIVOL := $(wildcard GUI.VOL)
+ifneq ($(GUIVOL),)
+$(BUILD)/obj/port/guivolembed.o: CXXFLAGS += -DNESTICLE_GUIVOL_FILE='"$(GUIVOL)"'
+$(BUILD)/obj/port/guivolembed.o: $(GUIVOL)
+endif
 
 $(BUILD)/obj/%.o: $(SRC)/%.cpp $(HDRS)
 	@mkdir -p $(dir $@)
