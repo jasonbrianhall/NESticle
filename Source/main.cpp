@@ -206,6 +206,15 @@ void gametimer()
 int keyboard()
 {
 // if (kbscan==KB_ESC) {quitgame(); return 1;}
+
+ //a control waiting for a key (Redefine keys) gets the next key, whatever
+ //it is: before the input devices take theirs, and Esc cancels it
+ if (GUIrect::modal)
+  {
+   if (!(kbscan&0x80)) GUIrect::modal->keyhit(kbscan,scan2ascii(kbscan));
+   return 1;
+  }
+
  if (kbscan==KB_ESC) {togglegui(); return 1;}
 
  if (input::refreshkeyboard(kbscan)) return 1; //dont add key to queue

@@ -247,6 +247,7 @@ void enablegui()
 void disablegui()
 {
  if (!guienabled) return;
+ GUIrect::setmodal(0); //(nothing waits for a key with the GUI hidden)
  GUIrect::setfocus(gmenu);
  guienabled=0;
  cleardesktop();
