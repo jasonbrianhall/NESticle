@@ -37,7 +37,7 @@ void enablegui();
 //------------------------------
 //dir listing box
 
-#ifdef __WATCOMC__
+#if defined(__WATCOMC__) || defined(__GNUC__)
 #define USERENTRY
 #endif
 #ifdef _MSC_VER
@@ -497,7 +497,7 @@ class nestimingdlg:public GUIcontents
   {
    setall();
    fill(CLR_BOX); GUIrect::draw(dest);
-   font[1]->printf(x1+85,y1+60,"%5.2f",((float)TIMERSPEED*CYCLESPERTICK)/1000000);
+   font[1]->printfile(x1+85,y1+60,"%5.2f",((float)TIMERSPEED*CYCLESPERTICK)/1000000);
   }
 
  //open functions

@@ -379,8 +379,9 @@ int neswrite4000(WORD a,BYTE d)
   case 0x4015: //sound switch
      ns->setenable(d);
     return 0;
+  case 0x4017: //joystick / APU frame counter
+     ns->write(0x17,d);
   case 0x4016: //joystick
-  case 0x4017: //joystick
      ram[0x4016]=1; //reset joystick
      ram[0x4017]=1; //reset joystick
     return 0;

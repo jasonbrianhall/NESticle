@@ -16,6 +16,9 @@
 
 #include "prof.h"
 
+//sound generation: WarpNES's APU (port/nesapu.cpp)
+#include "port/nesapu.h"
+
 //primary output functions
 void clearprimary();
 void primaryoutput(short *buf,int nums);
@@ -196,7 +199,11 @@ void neschannel::setenable(byte x)
 
 //===================================================
 // main sound device
-void nessound::write(byte a,byte d) {ch[a/4]->write(a&3,d);}
+void nessound::write(byte a,byte d)
+{
+ if (a<0x14) ch[a/4]->write(a&3,d);
+ nesapu_write(0x4000+a,d);
+}
 
 nessound::nessound()
 {
@@ -205,6 +212,7 @@ nessound::nessound()
  ch[2]=new trianglewave;
  ch[3]=new neschannel;
  ch[4]=new neschannel;
+ nesapu_reset();
  clearprimary();
 }
 
@@ -218,6 +226,7 @@ void nessound::reset()
 {
  for (int i=0; i<5; i++) ch[i]->reset();
  memset(mixingbuf,0,4096*2);
+ nesapu_reset();
 }
 
 //decode enable bit for each channel
@@ -226,6 +235,7 @@ void nessound::setenable(byte d)
  enablebits=d;
  for (int i=0; i<5; i++)
   ch[i]->setenable(d&(1<<i));
+ nesapu_write(0x4015,d);
 }
 
 //print all channels
@@ -247,8 +257,9 @@ void nessound::mix16(short *b,int nums)
  if (!CPURunning) return;
 
  //mix all sound channels
- for (int i=0; i<5; i++)
-   if (ch[i]->enabled)   ch[i]->mix16(b,nums);
+// for (int i=0; i<5; i++)
+//   if (ch[i]->enabled)   ch[i]->mix16(b,nums);
+ nesapu_mix(b,nums,SOUNDRATE);
 }
 
 

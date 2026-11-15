@@ -12,9 +12,7 @@ extern "C" {
  void loadpalette8(struct VBE_palette *c,int first,int num);
  //void __cdecl loadpalette6(struct VBE_palette *c,int first,int num);
  void loadpalette6(struct VBE_palette *c,int first,int num);
-#ifdef DOS
- void __cdecl drawrect(char *d,int color,int x,int y,int xw,int yw);
- #endif
+ void drawrect(char *d,int color,int x,int y,int xw,int yw);
  //void __cdecl drawrectmap(char *d,struct COLORMAP *c,int x,int y,int xw,int yw);
  void drawrectmap(char *d,struct COLORMAP *c,int x,int y,int xw,int yw);
  //void __cdecl drawhline(char *d,int color,int x,int y,int x2);
@@ -24,10 +22,6 @@ extern "C" {
 };
 
 
-#ifdef WIN95
- //hardware accellerated
- void drawrect(char *d,int color,int x,int y,int xw,int yw);
-#endif
 void drawbox(char *d,int color,int x,int y,int xw,int yw);
 
 #ifdef DOS
@@ -56,28 +50,13 @@ struct COLOR
  int findclosestmatch(COLOR &a,int num);
 };*/
 
-struct PALETTE {
-    int num_colors; // Number of colors in the palette
-    COLOR *c;       // Pointer to an array of colors
+struct PALETTE
+{
+ COLOR c[256]; //colors in palette (was COLOR c[]: read raw from .vol files)
 
-    // Constructor to allocate memory for the color array
-    PALETTE(int numColors) : num_colors(numColors) {
-        c = new COLOR[numColors];
-    }
-
-    // Destructor to free the allocated memory
-    ~PALETTE() {
-        delete[] c;
-    }
-
-    // Duplicate the palette with a specified number of colors
-    PALETTE *duplicate(int num);
-
-    // Fade the colors in the palette
-    void fade(PALETTE &p, int num, int level);
-
-    // Find the closest match for a color in the palette
-    int findclosestmatch(COLOR &a, int num);
+ PALETTE *duplicate(int num);
+ void fade(PALETTE &p,int num,int level); //level 0-31
+ int findclosestmatch(COLOR &a,int num);
 };
 
 //color index mapping

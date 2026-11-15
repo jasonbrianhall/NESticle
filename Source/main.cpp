@@ -52,8 +52,9 @@ float version=0.2;
 int SCREENX=640;
 int SCREENY=480;
 #else
-int SCREENX=256;
-int SCREENY=224;
+//(was 256x224; 320x240 leaves room for the GUI, and is a VESA mode)
+int SCREENX=320;
+int SCREENY=240;
 #endif
 
 anesprofile pf;
@@ -134,7 +135,9 @@ int initgame()
  inputdevice[1]=newinputdevice(cfg->pinput[1]);
 
  //load up graphics and shit
- if (!guivol.read("gui.vol")) return -1;
+ //(GUI.VOL isn't in the source release: without it, make our own set)
+ int guivol_generate(GUIVOL &v);
+ if (!guivol.read("gui.vol") && !guivol_generate(guivol)) return -1;
 
  //get palette
  initializenespalette();

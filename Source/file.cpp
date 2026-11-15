@@ -11,7 +11,7 @@
 
 #include "file.h"
 
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(__DJGPP__)
 #include <dir.h>
 #endif
 
@@ -27,7 +27,7 @@
 void enumdir(char *path, DIRFUNCPTR func,void *context)
 {
 // #ifdef WIN95
- #ifdef __BORLANDC__
+ #if defined(__BORLANDC__) || defined(__DJGPP__)
  ffblk ff;
  int done=findfirst(path,&ff,0);
  while (!done)
@@ -90,7 +90,7 @@ int FILEIO::open(char *filename)
 // h=open_doslf(filename);
  h=::open(filename,O_RDWR|O_BINARY);
  #endif
- #ifdef __unix__
+ #if defined(__unix__) && !defined(__DJGPP__) //(DJGPP defines __unix__ too)
  h=::open(filename,O_RDWR);
  #endif
  if (h==-1) {h=0; return -1;} //error
@@ -114,7 +114,12 @@ int FILEIO::create(char *filename)
  #endif
 
  #ifdef DOS
+ #ifdef __DJGPP__
+ //binary: creat() would open it in text mode (_fmode)
+ h=::open(filename,O_RDWR|O_CREAT|O_TRUNC|O_BINARY,S_IWRITE|S_IREAD);
+ #else
  h=creat(filename,S_IWRITE|S_IREAD);
+ #endif
 // h=create_doslf(filename);
  #endif
 

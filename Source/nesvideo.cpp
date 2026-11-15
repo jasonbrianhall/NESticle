@@ -52,8 +52,12 @@ extern char palfile[];
 void initializenespalette()
 {
  FILEIO f;
- f.open(palfile);
- f.read(nespal,256*3);
+ if (f.open(palfile) || f.read(nespal,256*3))
+  {
+   //no NESticle.pal (it isn't in the source release): use a built in one
+   void defaultnespalette(COLOR *p);
+   defaultnespalette(nespal);
+  }
  f.close();
 // msg.printf(2,"NES Palette initialized");
 }
@@ -556,7 +560,7 @@ void nesvideo::reset()
  resetpalette();
  for (int i=0; i<numrealntc; i++)
   realntc[i]->totalupdate();
- for (i=0; i<8; i++)
+ for (int i=0; i<8; i++)
   pt1kupdated[i]=1;
 // msg.printf(1,"NES video reset");
 }

@@ -22,7 +22,7 @@ public:
 class menu
 {
 public:
-class menuitem m[];
+class menuitem m[32]; //was m[] (Watcom allowed initialized flexible arrays); ends with a 0 entry
 int getnumitems(); //returns the number of items in menu
 
 int getmaxwidth(); //returns the maximum width of all items

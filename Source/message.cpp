@@ -36,8 +36,15 @@ inline void MESSAGE::set(char *m,int c)
 }
 
 
+#ifdef SDL_PORT
+int msgecho=0; //also print messages on stdout (NESTICLE.EXE -log)
+#endif
+
 void msgbuffer::add(char *m,int color)
 {
+#ifdef SDL_PORT
+ if (msgecho) {::printf("%s\n",m); fflush(stdout); fsync(1);}
+#endif
  msg[num%MAXMSG].set(m,color);
  num++;
  updated++;

@@ -1,0 +1,10 @@
+/build/
+/nesticle.exe
+/CWSDPMI.EXE
+/CWSDPMI.SWP
+/NESTICLE.CFG
+/*.nes
+/*.NES
+/*.sav
+/*.SAV
+/LOG.TXT

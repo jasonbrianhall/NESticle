@@ -13,6 +13,16 @@ int buildcompilerversionhigh=__BORLANDC__/256;
 int buildcompilerversionlow=__BORLANDC__%256;
 #endif
 
+#if defined(__GNUC__) && !defined(__WATCOMC__)
+#ifdef __DJGPP__
+char buildcompiler[]="DJGPP GCC";
+#else
+char buildcompiler[]="GCC";
+#endif
+int buildcompilerversionhigh=__GNUC__;
+int buildcompilerversionlow=__GNUC_MINOR__;
+#endif
+
 #ifdef _MSC_VER
 char buildcompiler[]="MS VC++";
 int buildcompilerversionhigh=4;

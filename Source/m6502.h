@@ -1,121 +1,51 @@
-#ifndef _N6502_
-#define _N6502_
+/* 6502 CPU core interface (Neil Bradley's M6502 API, as used by NESticle).
+   The original core was M6502\M6502.ASM (TASM, flat model). In this port it
+   is port/m6502.cpp, a portable C++ implementation of the same interface:
 
-#define NMI_VECTOR   0xFFFA
-#define RESET_VECTOR 0xFFFC
-#define BRK_VECTOR   0xFFFE
-#define IRQ_VECTOR   0xFFFE
+   - reads/writes below 0x2000 go straight to m6502ram (mirrored every 2K)
+   - reads at 0x8000 and up come straight from m6502rom (m6502rom+addr)
+   - everything else goes through m6502MemoryRead / m6502MemoryWrite
+     (writes at 0x8000 and up too, for the memory mappers)
+   - m6502exec(cycles) returns 0x10000 when the cycles ran out, or the
+     address of an unknown opcode it stopped at
+*/
+#ifndef _M6502_H_
+#define _M6502_H_
 
-#define F_CARRY  0x01
-#define F_ZERO   0x02
-#define F_INT    0x04
-#define F_DEC    0x08
-#define F_BREAK  0x10
-#define F_RSRVD  0x20
-#define F_OVER   0x40
-#define F_SIGN   0x80
-
-#include <cstdint>
-
-typedef uint32_t dword;
-
-//asm funcs
-extern "C" {
- int  n6502_execute();
- void n6502_nmi();
- void n6502_int();
-};
-
-
-//nes 6502 cpu
-class n6502cpu
-{
- public:
- byte a,s,x,y,f;
- word pc;
- byte trapbadops;
-
- byte reserved[8];
-
- int cycles;
- int totalcycles;
- byte *PCBASE;
-
- byte *rom; //>=0x8000
- byte *ram; //<0x2000
- dword readtrap;  //reads from 0x2000-0x7FFF
- dword writetrap; //writes from 0x2000-0x7FFF
-
- dword breakpoint; //current breakpoint set
-
-
- void setram(byte *t) {ram=t;}
- void setrom(byte *t) {rom=t-0x8000;}
-
-
- //cycle stuff
- void resetcycles() {cycles=totalcycles=0;}
- int getcycleselapsed() {return totalcycles-cycles;}
- void abort() {totalcycles-=cycles; cycles=0;}
-
- //returns 1 on breakpoint, -1 on badopcode, 0 on success
- int execute(int c)
- {
-  cycles=c; totalcycles+=c;
-
-  #ifdef CONSOLE
-  if (!breakpoint) return n6502_execute();
-  while (c>0)
-    {
-     if (pc==breakpoint) return 1;
-     cycles=1;
-     if (n6502_execute()) return -1;
-     c+=cycles;
-    }
-  return 0;
-  #else
-  return n6502_execute();
-  #endif
- }
-
- int trace()
- {
-  cycles=1; totalcycles++;
-  return n6502_execute();
- }
-
-
- //int/reset stuff
- void donmi() {n6502_nmi();}
- void doint() {n6502_int();}
-
- //hard reset
- void hardreset()
- {
-  breakpoint=0;
-  a=x=y=0; f=F_RSRVD|F_ZERO; s=0xFF;
-  cycles=totalcycles=0;
-  pc=*((word *)&rom[RESET_VECTOR]);
- };
-
- //soft reset
- void softreset()
- {
-  breakpoint=0;
-  cycles=totalcycles=0;
-  pc=*((word *)&rom[RESET_VECTOR]);
- };
-
-
- //debug
- void dumpreg();
- void dumpdisasm();
- void dumpinvalid();
- void debugkey(char k);
-};
-
-extern "C" n6502cpu ncpu; //main cpu
-
+#ifndef DWORD
+#define DWORD unsigned long int
+#endif
+#ifndef WORD
+#define WORD  unsigned short int
+#endif
+#ifndef BYTE
+#define BYTE  unsigned char
 #endif
 
+extern "C" {
 
+extern DWORD m6502clockticks;
+extern BYTE *m6502rom; //used for accesssing >=0x8000
+extern BYTE *m6502ram; //used for accessing <0x2000
+extern WORD m6502lastjsr;
+
+extern WORD m6502pc;
+extern WORD m6502af;  //A in the low byte, flags in the high byte
+extern BYTE m6502x;
+extern BYTE m6502y;
+extern BYTE m6502s;
+extern DWORD m6502nmi(void);
+extern DWORD m6502int(void);
+extern DWORD m6502exec(DWORD);
+extern void  m6502reset(void);
+extern DWORD m6502GetInfo(void);
+extern int cyclesRemaining;
+extern BYTE syncCycle;
+extern BYTE inNmi;
+
+extern int  (*m6502MemoryWrite)(WORD,BYTE);
+extern WORD (*m6502MemoryRead)(WORD);
+
+}
+
+#endif

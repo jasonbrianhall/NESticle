@@ -398,7 +398,7 @@ class nesstate
    mmc->restore(mmcstate);
 
    nv->setmirroring(mirroring);
-   for (i=0; i<4; i++)  nv->ntc[i]->nt=nat[i];
+   for (int i=0; i<4; i++)  nv->ntc[i]->nt=nat[i];
    nv->sc.c=lastsc;
    nv->sc.c.ptn[0].restore();
    nv->sc.c.ptn[1].restore();

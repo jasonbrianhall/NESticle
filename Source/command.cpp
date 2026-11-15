@@ -72,6 +72,11 @@ int option_sndrate(char *p)
  return 1;
 }
 
+#ifdef SDL_PORT
+extern int msgecho;
+int option_log(char *p) {msgecho=1; return 1;}
+#endif
+
 optiondef optiondefs[]=
 {
  #ifdef DOS
@@ -94,6 +99,9 @@ optiondef optiondefs[]=
  #endif
 
  {"setinput",option_setinput,0, "<num> <type>","Set input device <num> to <type>"},
+ #ifdef SDL_PORT
+ {"log",     option_log,0,     0, "Print messages to stdout too (NESTICLE > LOG.TXT)"},
+ #endif
 
 // {"definekey",option_definekey,0, "<num> <scancodes...>","Redefine keys for keyboard <num> "},
 

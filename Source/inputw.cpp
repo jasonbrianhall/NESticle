@@ -228,7 +228,7 @@ class changeinputdevice:public GUIcontents
 
   new GUIstatictext(this,1,"Test area:",125,3);
   test=new inputtestarea(this,125,15,91,in);
-  for (i=0; i<4; i++) b[i]=new inputtestbutton(this,127+i*23,110,18,10,in,i);
+  for (int i=0; i<4; i++) b[i]=new inputtestbutton(this,127+i*23,110,18,10,in,i);
   lasto=0;
 //  msg.printf(2,"in=%p in->o=%p",in,in ? in->o : 0);
   if (in)
