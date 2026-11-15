@@ -271,54 +271,71 @@ void setpalettenum(int index,COLOR *c)
  palchanged=1;
 }
 
-//our screen to the display
+//our screen to the display.
+//Normally all of it, scaled by a whole number. On Linux and Windows, while the
+//game is maximized with the GUI off, just the game's picture, filling the
+//window at 4:3 (like a TV) instead of sitting in black borders.
+#ifndef __DJGPP__
+int nesgamerect(int *x,int *y,int *w,int *h); //nesvideo.cpp
+#endif
+static SDL_Rect shown;              //where the picture is on the display
+static int srcx,srcy,srcw=1,srch=1; //and what part of our screen it is
+static int *xmap=0,xmapn=0;
+
 static void present()
 {
  if (!winsurf) return;
  if (palchanged) applypalette();
- if (SDL_MUSTLOCK(winsurf)) SDL_LockSurface(winsurf);
 
- int w=SDL_min(SCREENX,(winsurf->w-dest.x)/scale);
- int h=SDL_min(SCREENY,(winsurf->h-dest.y)/scale);
- int bpp=SDL_BYTESPERPIXEL(winsurf->format);
- Uint8 *drow=(Uint8 *)winsurf->pixels+dest.y*winsurf->pitch+dest.x*bpp;
- const Uint8 *srow=(const Uint8 *)screen;
-
- for (int y=0; y<h; y++,srow+=PITCH)
+ int sx=0,sy=0,sw=SCREENX,sh=SCREENY;
+ SDL_Rect d=dest;
+ #ifndef __DJGPP__
+ if (nesgamerect(&sx,&sy,&sw,&sh) && sx>=0 && sy>=0 && sx+sw<=SCREENX && sy+sh<=SCREENY)
   {
-   Uint8 *d=drow;
-   const Uint8 *s=srow;
+   d.h=winsurf->h; d.w=d.h*4/3;
+   if (d.w>winsurf->w) {d.w=winsurf->w; d.h=d.w*3/4;}
+   d.x=(winsurf->w-d.w)/2; d.y=(winsurf->h-d.h)/2;
+  }
+  else {sx=sy=0; sw=SCREENX; sh=SCREENY;}
+ #endif
+ if (d.w<=0 || d.h<=0) return;
+ if (d.x!=shown.x || d.y!=shown.y || d.w!=shown.w || d.h!=shown.h)
+   SDL_FillSurfaceRect(winsurf,0,0); //the picture moved: clear the borders
+ shown=d; srcx=sx; srcy=sy; srcw=sw; srch=sh;
+
+ int w=SDL_min(d.w,winsurf->w-d.x);
+ int h=SDL_min(d.h,winsurf->h-d.y);
+ if (w<=0 || h<=0) return;
+ if (w>xmapn) {xmap=(int *)realloc(xmap,w*sizeof(int)); xmapn=w;}
+ for (int x=0; x<w; x++) xmap[x]=sx+x*sw/d.w;
+
+ if (SDL_MUSTLOCK(winsurf)) SDL_LockSurface(winsurf);
+ int bpp=SDL_BYTESPERPIXEL(winsurf->format);
+ Uint8 *drow=(Uint8 *)winsurf->pixels+d.y*winsurf->pitch+d.x*bpp;
+ int lasty=-1;
+ for (int y=0; y<h; y++,drow+=winsurf->pitch)
+  {
+   int ys=sy+y*sh/d.h;
+   if (ys==lasty) {memcpy(drow,drow-winsurf->pitch,w*bpp); continue;}
+   lasty=ys;
+   const Uint8 *s=(const Uint8 *)screen+ys*PITCH;
    if (indexed)
     {
-     if (scale==1) memcpy(d,s,w);
-      else for (int x=0; x<w; x++) for (int k=0; k<scale; k++) *d++=s[x];
+     if (d.w==sw && sx==0) memcpy(drow,s,w);
+      else for (int x=0; x<w; x++) drow[x]=s[xmap[x]];
     }
    else switch (bpp)
     {
-     case 2:
-      {
-       Uint16 *o=(Uint16 *)d;
-       for (int x=0; x<w; x++) {Uint16 v=(Uint16)palpix[s[x]]; for (int k=0; k<scale; k++) *o++=v;}
-      }
-      break;
-     case 4:
-      {
-       Uint32 *o=(Uint32 *)d;
-       for (int x=0; x<w; x++) {Uint32 v=palpix[s[x]]; for (int k=0; k<scale; k++) *o++=v;}
-      }
-      break;
+     case 2: {Uint16 *o=(Uint16 *)drow; for (int x=0; x<w; x++) o[x]=(Uint16)palpix[s[xmap[x]]];} break;
+     case 4: {Uint32 *o=(Uint32 *)drow; for (int x=0; x<w; x++) o[x]=palpix[s[xmap[x]]];} break;
      case 3:
-      for (int x=0; x<w; x++)
-       {
-        Uint32 v=palpix[s[x]];
-        for (int k=0; k<scale; k++) {d[0]=v; d[1]=v>>8; d[2]=v>>16; d+=3;}
-       }
+      {
+       Uint8 *o=drow;
+       for (int x=0; x<w; x++) {Uint32 v=palpix[s[xmap[x]]]; o[0]=v; o[1]=v>>8; o[2]=v>>16; o+=3;}
+      }
       break;
     }
-   for (int k=1; k<scale; k++) memcpy(drow+k*winsurf->pitch,drow,w*scale*bpp);
-   drow+=scale*winsurf->pitch;
   }
-
  if (SDL_MUSTLOCK(winsurf)) SDL_UnlockSurface(winsurf);
  SDL_UpdateWindowSurface(window);
 }
@@ -540,8 +557,13 @@ static void mousemove(float wx,float wy)
    if (ww>0 && wh>0) {wx=wx*winsurf->w/ww; wy=wy*winsurf->h/wh;}
   }
  #endif
- int x=((int)wx-dest.x)/scale;
- int y=((int)wy-dest.y)/scale;
+ int x,y;
+ if (shown.w>0 && shown.h>0)
+  {
+   x=srcx+(int)(((int)wx-shown.x)*(long long)srcw/shown.w);
+   y=srcy+(int)(((int)wy-shown.y)*(long long)srch/shown.h);
+  }
+  else {x=((int)wx-dest.x)/scale; y=((int)wy-dest.y)/scale;}
  if (x<0) x=0;
  if (y<0) y=0;
  if (x>=SCREENX) x=SCREENX-1;
