@@ -626,6 +626,15 @@ int main(int argc,char *argv[])
  //SET LFN=N turns them off); show 8.3 names as they are, not lowercased
  _crt0_startup_flags|=_CRT0_FLAG_PRESERVE_FILENAME_CASE;
  #endif
+
+ //the program's folder: GUI.VOL and CURSOR.BMP are found there too
+ {
+  extern char exedir[260];
+  strncpy(exedir,argv[0] ? argv[0] : "",259); exedir[259]=0;
+  char *p=strrchr(exedir,'/'),*p2=strrchr(exedir,'\\');
+  if (p2>p) p=p2;
+  if (p) p[1]=0; else exedir[0]=0;
+ }
  //get configuration
  cfg=new config();
  cfg->load(configfile);
