@@ -52,8 +52,9 @@ its own palette, font and icons, and a bleeding hand cursor. For the
 original art, put a GUI.VOL next to NESTICLE.EXE: either a real one, or
 simply a copy of an original NESticle NESTICLE.EXE renamed GUI.VOL (the
 GUI volume is inside it). Then you get the original palette, font, icons,
-Buddy, and the hand cursor with its bleeding animation. (make dist copies
-a GUI.VOL from this folder, if there is one.)
+Buddy, and the hand cursor with its bleeding animation. This folder has
+one, from the original NESticle; make dist copies it. GUI.VOL and
+CURSOR.BMP are looked for in the current folder, then next to the EXE.
 
 For just a different mouse cursor, put a CURSOR.BMP there: actual size (up
 to 64x64), 1/4/8/24/32-bit uncompressed; its top left pixel's color is

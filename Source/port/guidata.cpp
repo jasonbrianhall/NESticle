@@ -306,6 +306,23 @@ int guivol_generate(GUIVOL &v)
 }
 
 //----------------------------------------------------------------
+//GUI files are looked for in the current folder, then next to the program
+
+char exedir[260]=""; //set by the platform layer (sdlmain.cpp), ends with '/'
+
+static FILE *openguifile(const char *name)
+{
+ FILE *f=fopen(name,"rb");
+ if (!f && exedir[0])
+  {
+   char s[600];
+   sprintf(s,"%s%s",exedir,name);
+   f=fopen(s,"rb");
+  }
+ return f;
+}
+
+//----------------------------------------------------------------
 //a mouse cursor from CURSOR.BMP, if there is one: to use your own (the
 //original NESticle hand, say) without GUI.VOL. Uncompressed 1, 4, 8, 24 or 32
 //bit BMP, actual size (up to 64x64). The color of its top left pixel is
@@ -320,7 +337,7 @@ static unsigned rd32(const unsigned char *p) {return p[0]|(p[1]<<8)|(p[2]<<16)|(
 
 int loadcursorbmp(GUIVOL &v,const char *filename)
 {
- FILE *f=fopen(filename,"rb");
+ FILE *f=openguifile(filename);
  if (!f) return 0;
  fseek(f,0,SEEK_END);
  long len=ftell(f);
@@ -415,7 +432,7 @@ static unsigned rdle32(const unsigned char *p) {return p[0]|(p[1]<<8)|(p[2]<<16)
 
 int guivol_loadnamed(GUIVOL &v,const char *filename)
 {
- FILE *f=fopen(filename,"rb");
+ FILE *f=openguifile(filename);
  if (!f) return 0;
  fseek(f,0,SEEK_END);
  long len=ftell(f);
