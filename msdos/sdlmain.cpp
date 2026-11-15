@@ -272,12 +272,10 @@ void setpalettenum(int index,COLOR *c)
 }
 
 //our screen to the display.
-//Normally all of it, scaled by a whole number. On Linux and Windows, while the
-//game is maximized with the GUI off, just the game's picture, filling the
-//window at 4:3 (like a TV) instead of sitting in black borders.
-#ifndef __DJGPP__
+//Normally all of it, scaled by a whole number. While the game is maximized
+//with the GUI off, just the game's picture, filling the window (or the DOS
+//screen) at 4:3 like a TV instead of sitting in black borders.
 int nesgamerect(int *x,int *y,int *w,int *h); //nesvideo.cpp
-#endif
 static SDL_Rect shown;              //where the picture is on the display
 static int srcx,srcy,srcw=1,srch=1; //and what part of our screen it is
 static int *xmap=0,xmapn=0;
@@ -289,7 +287,6 @@ static void present()
 
  int sx=0,sy=0,sw=SCREENX,sh=SCREENY;
  SDL_Rect d=dest;
- #ifndef __DJGPP__
  if (nesgamerect(&sx,&sy,&sw,&sh) && sx>=0 && sy>=0 && sx+sw<=SCREENX && sy+sh<=SCREENY)
   {
    d.h=winsurf->h; d.w=d.h*4/3;
@@ -297,7 +294,6 @@ static void present()
    d.x=(winsurf->w-d.w)/2; d.y=(winsurf->h-d.h)/2;
   }
   else {sx=sy=0; sw=SCREENX; sh=SCREENY;}
- #endif
  if (d.w<=0 || d.h<=0) return;
  if (d.x!=shown.x || d.y!=shown.y || d.w!=shown.w || d.h!=shown.h)
    SDL_FillSurfaceRect(winsurf,0,0); //the picture moved: clear the borders
