@@ -14,7 +14,9 @@ struct MESSAGE {
 };
 
 
+#ifndef _WIN32 //(Windows' C library has it)
 int stricmp(const char* s1, const char* s2);
+#endif
 
 class msgbuffer
 {

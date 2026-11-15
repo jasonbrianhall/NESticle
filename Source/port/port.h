@@ -19,8 +19,23 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#ifdef __DJGPP__
+#include <fcntl.h>
+#include <limits.h>
+#include <sys/stat.h>
+#if defined(__DJGPP__) || defined(_WIN32)
 #include <io.h>     //filelength
+#else
+//Linux and the like: no text mode, no filelength
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+inline long filelength(int h) {struct stat s; return fstat(h,&s) ? -1 : s.st_size;}
+#endif
+#ifdef _WIN32
+#include <direct.h>
+#define realpath(n,r) _fullpath((r),(n),PATH_MAX)
+#define mkdir(d,m) _mkdir(d)
+#define fsync(h) _commit(h)
 #endif
 
 //Watcom heap check (stddlg.cpp "Heap check" menu)

@@ -312,14 +312,25 @@ char exedir[260]=""; //set by the platform layer (sdlmain.cpp), ends with '/'
 
 static FILE *openguifile(const char *name)
 {
- FILE *f=fopen(name,"rb");
- if (!f && exedir[0])
+ //as given, in capitals and in small letters (on Linux, case matters)
+ char n[3][260];
+ int i;
+ strncpy(n[0],name,259); n[0][259]=0;
+ strcpy(n[1],n[0]); strcpy(n[2],n[0]);
+ for (i=0; n[1][i]; i++) {n[1][i]=toupper((unsigned char)n[1][i]); n[2][i]=tolower((unsigned char)n[2][i]);}
+ for (i=0; i<3; i++)
   {
-   char s[600];
-   sprintf(s,"%s%s",exedir,name);
-   f=fopen(s,"rb");
+   FILE *f=fopen(n[i],"rb");
+   if (f) return f;
+   if (exedir[0])
+    {
+     char s[600];
+     sprintf(s,"%s%s",exedir,n[i]);
+     f=fopen(s,"rb");
+     if (f) return f;
+    }
   }
- return f;
+ return 0;
 }
 
 //----------------------------------------------------------------

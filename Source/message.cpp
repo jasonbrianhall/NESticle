@@ -10,6 +10,7 @@
 #include "font.h"
 #include "dd.h"
 
+#ifndef _WIN32 //(Windows' C library has it)
 int stricmp(const char* s1, const char* s2) {
   while(*s1 && *s2) {
     if (tolower(*s1) != tolower(*s2)) {
@@ -21,6 +22,7 @@ int stricmp(const char* s1, const char* s2) {
 
   return tolower(*s1) - tolower(*s2);
 }
+#endif
 
 
 inline void MESSAGE::draw(int x,int y)
