@@ -50,6 +50,8 @@ endif()
 if(MSVC)
   # /J: char is unsigned (the code expects Watcom's); /FI: the compatibility header
   target_compile_options(nesticle PRIVATE /J /FI${SRC}/port/port.h /W0 /permissive)
+  #unistd.h and strings.h, which Microsoft C doesn't have
+  target_include_directories(nesticle PRIVATE ${SRC}/port/msvc)
   target_compile_definitions(nesticle PRIVATE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
 else()
   target_compile_options(nesticle PRIVATE -fpermissive -funsigned-char -fno-strict-aliasing
