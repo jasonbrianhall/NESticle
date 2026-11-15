@@ -214,7 +214,7 @@ static int setvideomode()
  return 1;
 }
 #else
-//Linux, Windows: a resizable window (Alt+Enter: full screen), the screen
+//Linux, Windows: a resizable window (F11 or Alt+Enter: full screen), the screen
 //scaled into it by a whole number
 static int setvideomode()
 {
@@ -748,8 +748,9 @@ int main(int argc,char *argv[])
      #endif
      case SDL_EVENT_KEY_DOWN:
       #ifndef __DJGPP__
-      //Alt+Enter: full screen / window
-      if (e.key.scancode==SDL_SCANCODE_RETURN && (e.key.mod&SDL_KMOD_ALT) && !e.key.repeat)
+      //F11 or Alt+Enter: full screen / window
+      if (!e.key.repeat && (e.key.scancode==SDL_SCANCODE_F11 ||
+          (e.key.scancode==SDL_SCANCODE_RETURN && (e.key.mod&SDL_KMOD_ALT))))
        {
         SDL_SetWindowFullscreen(window,!(SDL_GetWindowFlags(window)&SDL_WINDOW_FULLSCREEN));
         break;
