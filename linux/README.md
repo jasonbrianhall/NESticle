@@ -18,7 +18,7 @@ Running
     ./nesticle -run SMB.NES     load and run a ROM
 
 The window can be resized (the picture scales by whole numbers);
-Alt+Enter switches to full screen and back. Keys, menus, GUI.VOL and
+F11 (or Alt+Enter) switches to full screen and back. Keys, menus, GUI.VOL and
 CURSOR.BMP work as in ../msdos/README.md; GUI.VOL is looked for in the
 current folder, then next to the program. File names are case sensitive
 here: give ROMs with their real names.

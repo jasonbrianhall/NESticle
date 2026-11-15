@@ -23,5 +23,5 @@ Running
 
 Keep SDL3.dll (and GUI.VOL) next to nesticle.exe. Run it, or drop
 options on it from a command prompt: nesticle -run SMB.NES. The window
-can be resized; Alt+Enter switches to full screen and back. Keys, menus,
+can be resized; F11 (or Alt+Enter) switches to full screen and back. Keys, menus,
 GUI.VOL and CURSOR.BMP work as in ../msdos/README.md.
